@@ -27,6 +27,7 @@ bcrypt = Bcrypt(app)  # Asegúrate de que 'app' sea tu instancia de Flask
 
 
 
+
 def extensiones(file):
     file = file.split('.')
     if file[1] in EXTENCIONES_PERMITIDAS:
@@ -48,6 +49,7 @@ conexion = MySQL(app)
 @app.before_request
 def before_request():
     g.conexion = conexion.connection
+    g.bcrypt = bcrypt
 # servicios este es para que funcione el flashed
 app.secret_key = 'mysecretkey'
  
@@ -100,19 +102,26 @@ def cerrar_sesion():
 def login_empleados():
     usuario = request.form.get('Usuario')
     contra = request.form.get('Contrasena')
+   
     cursor = conexion.connection.cursor()
-    sql = "SELECT * FROM usuarios WHERE usuario=%s AND contrasena=%s AND tipo_usuario=%s"
-    valores = (usuario, contra, 3)
+    sql = "SELECT * FROM usuarios WHERE usuario=%s AND tipo_usuario=%s"
+    valores = (usuario, 3)
     cursor.execute(sql, valores)
     datos = cursor.fetchall()
     numero_filas = len(datos)
 
     if numero_filas > 0:
+        for dato in datos:
+            contrasena_hash = dato[4]
+            if bcrypt.check_password_hash(contrasena_hash, contra):
+                cursor.close()
+                return render_template('acceso_empleado.html')
         cursor.close()
-        return render_template('acceso_empleado.html')
+        mensaje_alerta = "Usuario o contraseña incorrectos!"
+        return redirect(url_for('empleados', mensaje_alerta=mensaje_alerta))
     else:
         cursor.close()
-        mensaje_alerta = "Usuario Erroneo!"
+        mensaje_alerta = "Usuario no encontrado!"
         return redirect(url_for('empleados', mensaje_alerta=mensaje_alerta))
 
 
@@ -123,6 +132,8 @@ def registro_empleados():
     documento = request.form.get('documento')
     usuario = request.form.get('usuario')
     contrasena = request.form.get('contrasena')
+    constrasena_hash = bcrypt.generate_password_hash(contrasena)
+    print(constrasena_hash)
     tipoUsuario = request.form.get('tipo')
     con = 0
 
@@ -138,7 +149,7 @@ def registro_empleados():
     if (con == 4):
         query = "INSERT INTO usuarios(nombre_completo,documento,usuario,contrasena,tipo_usuario) VALUES (%s, %s, %s, %s, %s)"
         valores = (nombre_completo, documento,
-                   usuario, contrasena, tipoUsuario)
+                   usuario, constrasena_hash, tipoUsuario)
         cursor.execute(query, valores)
         conexion.connection.commit()
         cursor.close()

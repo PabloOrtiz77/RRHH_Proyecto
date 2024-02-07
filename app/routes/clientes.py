@@ -4,6 +4,7 @@ from flask import request, redirect, url_for
 
 
 
+
 client_routes = Blueprint('client_routes', __name__)
 
 
@@ -18,15 +19,23 @@ def login_clientes():
     usuario = request.form.get('Usuario')
     contra = request.form.get('Contrasena')
     cursor = g.conexion.cursor()
-    sql = "SELECT * FROM usuarios WHERE usuario=%s AND contrasena=%s AND tipo_usuario=%s"
-    valores = (usuario, contra, 2)
+    sql = "SELECT * FROM usuarios WHERE usuario=%s AND tipo_usuario=%s"
+    valores = (usuario, 2)
     cursor.execute(sql, valores)
     datos = cursor.fetchall()
     numero_filas = len(datos)
 
     if numero_filas > 0:
-        cursor.close()
-        return render_template('acceso_cliente.html')
+        print(datos)
+        contrasena_hash = datos[0][4]
+        print(contrasena_hash, contra)
+        if g.bcrypt.check_password_hash(contrasena_hash, contra):
+            cursor.close()
+            return render_template('acceso_cliente.html')
+        else:
+            cursor.close()
+            mensaje_alerta = "Contraseña incorrecta!"
+            return redirect(url_for('client_routes.clientes', mensaje_alerta=mensaje_alerta))
     else:
         cursor.close()
         mensaje_alerta = "Usuario Erroneo!"
@@ -53,10 +62,10 @@ def registro_clientes():
     if len(contrasena) > 0:
         con += 1
 
-    if (con == 4):
+    if con == 4:
+        hashed_password = g.bcrypt.generate_password_hash(contrasena)
         query = "INSERT INTO usuarios(nombre_completo,documento,usuario,contrasena,tipo_usuario) VALUES (%s, %s, %s, %s, %s)"
-        valores = (nombre_completo, documento,
-                   usuario, contrasena, tipoUsuario)
+        valores = (nombre_completo, documento, usuario, hashed_password, tipoUsuario)
         cursor.execute(query, valores)
         g.conexion.commit()
         cursor.close()
