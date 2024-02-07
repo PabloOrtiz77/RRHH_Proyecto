@@ -1,57 +1,81 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Caja</title>
-    <link rel="stylesheet" href="../static/css/main.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">  
+    <link rel="stylesheet" href="../static/css/main.css" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3"
+      crossorigin="anonymous"
+    />
     <script>
-        function confirmDelete() {
-            return confirm("¿Estás seguro de borrar?");
-        }
+      function confirmDelete() {
+        return confirm("¿Estás seguro de borrar?");
+      }
     </script>
-</head>
+  </head>
 
-<body>
-
+  <body>
     <div class="container pt-5">
-        <h1 style="text-align: center;">Caja Astil</h1>
-        <div>
-            <table id="example1" class="table table-striped table-bordered bg-white table-sm" style="text-align: center;">
-                <thead>
-                    <tr>
-                        <th>Razon Social</th>
-                        <th>Ruc</th>
-                        <th>Monto caja ₲</th>
-                        <th style="width: 150px;">Agregar Monto</th>
-                        <th style="width: 170px;">Opciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for dato in datos %}
-                    <form method="post" action="/caja/guardar/{{dato.4}}/{{dato.2}}">
-                        <tr>
-                            <td>{{dato.1}}</td>
-                            <td>{{dato.4}}</td>
-                            <td>
-                                {{'{:,.0f}'.format(dato.3)}} <!-- Display as integer with commas as thousands separators -->
-                            </td>
-                            <td>
-                                <input type="text" name="monto" class="form-control-plaintext" style="background-color: white; width:15em;">
-                            </td>
-                            <td>
-                                <button type="submit" class="btn btn-primary guardar-button">Guardar</button>
-                                <a href="/borrarCaja/{{dato.2}}" class="btn btn-danger btn-delete" onclick="return confirmDelete()">Borrar</a><br>
-                            </td>
-                        </tr>
-                    </form>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <a class="btn btn-primary guardar-button" href="{{url_for('volverAdmin')}}">Volver</a>
-        </div>
+      <h1 style="text-align: center">Caja Astil</h1>
+      <div>
+        <table
+          id="example1"
+          class="table table-striped table-bordered bg-white table-sm"
+          style="text-align: center"
+        >
+          <thead>
+            <tr>
+              <th>Razon Social</th>
+              <th>Ruc</th>
+              <th>Monto caja ₲</th>
+              <th style="width: 150px">Agregar Monto</th>
+              <th style="width: 170px">Opciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for dato in datos %}
+            <form method="post" action="/caja/guardar/{{dato.4}}/{{dato.2}}">
+              <tr>
+                <td>{{dato.1}}</td>
+                <td>{{dato.4}}</td>
+                <td>
+                  {{'{:,.0f}'.format(dato.3)}}
+                  <!-- Display as integer with commas as thousands separators -->
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    name="monto"
+                    class="form-control-plaintext"
+                    style="background-color: white; width: 15em"
+                  />
+                </td>
+                <td>
+                  <button type="submit" class="btn btn-primary guardar-button">
+                    Guardar
+                  </button>
+                  <a
+                    href="/borrarCaja/{{dato.2}}"
+                    class="btn btn-danger btn-delete"
+                    onclick="return confirmDelete()"
+                    >Borrar</a
+                  ><br />
+                </td>
+              </tr>
+            </form>
+            {% endfor %}
+          </tbody>
+        </table>
+        <a
+          class="btn btn-primary guardar-button"
+          href="{{url_for('admin_routes.volver_admin')}}"
+          >Volver</a
+        >
+      </div>
     </div>
-
-</body>
+  </body>
 </html>

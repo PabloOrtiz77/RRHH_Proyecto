@@ -28,14 +28,14 @@ def login_admin():
         return redirect(url_for('index', mensaje_alerta=mensaje_alerta))
     
 @admin_routes.route('/inicio')
-def volverAdmin():
+def volver_admin():
     return render_template('acceso_admin.html')
 
 
 #ruta principal Para la gestion de empleados
 
 @admin_routes.route('/gestion')
-def gestionEmpleados():
+def gestion_empleados():
     cursor = g.conexion.cursor()
     # Aca extraemos los datos que hay en la seccion de empleados
     cursor.execute("""
@@ -92,14 +92,14 @@ def buscar():
             flash(
                 'No se encontraron resultados para el empleado con el documento proporcionado.', 'error')
 
-    return redirect(url_for('gestionEmpleados'))
+    return redirect(url_for('admin_routes.gestion_empleados'))
 
 
 # Crud Para Clientes
 
 
 @admin_routes.route('/gestionclientes')
-def gestionClientes():
+def gestion_clientes():
     cursor = g.conexion.cursor()
     # Aca extraemos los datos que hay en la seccion de clientes
     cursor.execute("""
@@ -127,7 +127,7 @@ def buscarC():
             flash(
                 'No se encontraron resultados para el cliente con el RUC proporcionado.', 'error')
 
-    return redirect(url_for('gestionClientes'))
+    return redirect(url_for('admin_routes.gestion_clientes'))
 
 
 # Planilla de Asistencia

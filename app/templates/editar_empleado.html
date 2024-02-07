@@ -1,123 +1,188 @@
-{% extends './layout.html' %} 
-
-{% block body %}
-<div class="col-md-6 offset-md-1"style="margin: 5px auto;" >
-<nav class="navbar navbar-dark bg-primary">
+{% extends './layout.html' %} {% block body %}
+<div class="col-md-6 offset-md-1" style="margin: 5px auto">
+  <nav class="navbar navbar-dark bg-primary">
     <div class="container">
       <a class="navbar-brand" href="/admin/gestion">INICIO</a>
 
-       <form class="d-flex" action="/admin/gestion/buscar" method="post" enctype="multipart/form-data">
-         <input name="buscar" class="form-control me-3" type="search" placeholder="Numero de documento" aria-label="Search">
-         <button class="btn btn-outline-success" style="color: black;" type="submit">Buscar</button>
-       </form>
-      
-      <a class="navbar-brand" href="{{url_for('volverAdmin')}}">Salir</a> 
+      <form
+        class="d-flex"
+        action="/admin/gestion/buscar"
+        method="post"
+        enctype="multipart/form-data"
+      >
+        <input
+          name="buscar"
+          class="form-control me-3"
+          type="search"
+          placeholder="Numero de documento"
+          aria-label="Search"
+        />
+        <button
+          class="btn btn-outline-success"
+          style="color: black"
+          type="submit"
+        >
+          Buscar
+        </button>
+      </form>
+
+      <a class="navbar-brand" href="{{url_for('admin_routes.volver_admin')}}"
+        >Salir</a
+      >
     </div>
-</nav>
+  </nav>
 </div>
 
 <div class="container pt-4">
-<div class="col-md-5 offset-md-4">
+  <div class="col-md-5 offset-md-4">
     <div class="card card-body">
-        <form action="/actualizarE/{{dato.0}}/{{dato.4}}" method="post" enctype="multipart/form-data">
-            <div class="form-group">
-                <input type="text" class="form-control" placeholder="Nombre Completo" name="nombre" required value="{{dato.1}}">
+      <form
+        action="/actualizarE/{{dato.0}}/{{dato.4}}"
+        method="post"
+        enctype="multipart/form-data"
+      >
+        <div class="form-group">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Nombre Completo"
+            name="nombre"
+            required
+            value="{{dato.1}}"
+          />
+        </div>
+        <div class="form-group">
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Apellido Completo"
+            name="apellido"
+            required
+            value="{{dato.2}}"
+          />
+        </div>
+        <div class="form-group">
+          <input
+            type="number"
+            class="form-control"
+            placeholder="Nro documento"
+            name="documento"
+            required
+            value="{{dato.3}}"
+          />
+        </div>
+        <div class="form-group">
+          <div class="form-group">
+            <div class="custom-file">
+              <input
+                type="file"
+                class="custom-file-input"
+                name="subir"
+                id="subir"
+                aria-describedby="inputGroupFileAddon01"
+                accept=".pdf"
+              />
+              <label class="custom-file-label" for="inputGroupFile01"
+                >Selecciona un Archivo PDF</label
+              >
             </div>
-            <div class="form-group">
-            <input type="text" class="form-control" placeholder="Apellido Completo" name="apellido"required value="{{dato.2}}">
-            </div>
-            <div class="form-group">
-            <input type="number" class="form-control"  placeholder="Nro documento" name="documento"required value="{{dato.3}}">
-            </div>
-            <div class="form-group">
-                <div class="form-group">
-                    <div class="custom-file">
-                        <input type="file" class="custom-file-input" name="subir" id="subir" aria-describedby="inputGroupFileAddon01" accept=".pdf">
-                        <label class="custom-file-label" for="inputGroupFile01" >Selecciona un Archivo PDF</label>
-                      </div>
-                    </div>
-            </div>
-            <div class="form-group">
-                <input type="text" placeholder="Telefono" name="telefono"required class="form-control" value="{{dato.8}}">
-            </div>
-            <div class="form-group">
-                <select name="cliente" id="selectCliente" class="custom-select">
-                    {% for data in datodos %}
-                        <option value="{{data.0}}">{{data.1}}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <script>
-                // Obtén el valor desde Python, por ejemplo:
-                var valorDesdePython = "{{dato.9}}"; // Asegúrate de que esto obtenga el valor correcto
-              
-                // Selecciona el elemento select
-                var selectElement = document.getElementById('selectCliente');
-              
-                // Establece el valor predeterminado
-                selectElement.value = valorDesdePython;
-              </script>
+          </div>
+        </div>
+        <div class="form-group">
+          <input
+            type="text"
+            placeholder="Telefono"
+            name="telefono"
+            required
+            class="form-control"
+            value="{{dato.8}}"
+          />
+        </div>
+        <div class="form-group">
+          <select name="cliente" id="selectCliente" class="custom-select">
+            {% for data in datodos %}
+            <option value="{{data.0}}">{{data.1}}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <script>
+          // Obtén el valor desde Python, por ejemplo:
+          var valorDesdePython = "{{dato.9}}"; // Asegúrate de que esto obtenga el valor correcto
 
-            <div class="form-group">
-                <select name="pais"  class="custom-select" id="selectPais">
-                  {% for nacionalidad in nacionalidades %}
-                    <option value="{{nacionalidad.0}}">{{nacionalidad.1}}</option>
-                  {% endfor %}
-                  </select>
-                  <script>
-                    // Obtén el valor desde Python, por ejemplo:
-                    var valorDesdePython = "{{dato.5}}"; // Asegúrate de que esto obtenga el valor correcto
-                  
-                    // Selecciona el elemento select
-                    var selectElement = document.getElementById('selectPais');
-                  
-                    // Establece el valor predeterminado
-                    selectElement.value = valorDesdePython;
-                  </script>
-            </div>
-            <div class="form-group">
-                <select name="puesto"  class="custom-select" id="puesto">
-                  {% for puesto in puestos %}
-                         <option value="{{puesto.0}}">{{puesto.1}}</option>
-                  {% endfor %}
-                  </select>
-                  <script>
-                    // Obtén el valor desde Python, por ejemplo:
-                    var valorDesdePython = "{{dato.6}}"; // Asegúrate de que esto obtenga el valor correcto
-                  
-                    // Selecciona el elemento select
-                    var selectElement = document.getElementById('puesto');
-                  
-                    // Establece el valor predeterminado
-                    selectElement.value = valorDesdePython;
-                  </script>
-            </div>
-            <div class="form-group">
-              <select name="tip_em"  class="custom-select" id="tip_em">
-                {% for tipo in tipos %}
-                       <option value="{{tipo.0}}">{{tipo.1}}</option>
-                {% endfor %}
-                </select>
-                <script>
-                  // Obtén el valor desde Python, por ejemplo:
-                  var valorDesdePython = "{{dato.10}}"; // Asegúrate de que esto obtenga el valor correcto
-                
-                  // Selecciona el elemento select
-                  var selectElement = document.getElementById('tip_em');
-                
-                  // Establece el valor predeterminado
-                  selectElement.value = valorDesdePython;
-                </script>
-          </div>
-            <div class="form-group">
-              <input type="date" placeholder="Fecha de ingreso" name="ingreso"required class="form-control" value="{{dato.11}}">
-          </div>
-            <div class="form-group">
-            <button class="btn btn-success btn-block ">Actualizar Empleado</button>
-            </div>
-        </form>
+          // Selecciona el elemento select
+          var selectElement = document.getElementById("selectCliente");
+
+          // Establece el valor predeterminado
+          selectElement.value = valorDesdePython;
+        </script>
+
+        <div class="form-group">
+          <select name="pais" class="custom-select" id="selectPais">
+            {% for nacionalidad in nacionalidades %}
+            <option value="{{nacionalidad.0}}">{{nacionalidad.1}}</option>
+            {% endfor %}
+          </select>
+          <script>
+            // Obtén el valor desde Python, por ejemplo:
+            var valorDesdePython = "{{dato.5}}"; // Asegúrate de que esto obtenga el valor correcto
+
+            // Selecciona el elemento select
+            var selectElement = document.getElementById("selectPais");
+
+            // Establece el valor predeterminado
+            selectElement.value = valorDesdePython;
+          </script>
+        </div>
+        <div class="form-group">
+          <select name="puesto" class="custom-select" id="puesto">
+            {% for puesto in puestos %}
+            <option value="{{puesto.0}}">{{puesto.1}}</option>
+            {% endfor %}
+          </select>
+          <script>
+            // Obtén el valor desde Python, por ejemplo:
+            var valorDesdePython = "{{dato.6}}"; // Asegúrate de que esto obtenga el valor correcto
+
+            // Selecciona el elemento select
+            var selectElement = document.getElementById("puesto");
+
+            // Establece el valor predeterminado
+            selectElement.value = valorDesdePython;
+          </script>
+        </div>
+        <div class="form-group">
+          <select name="tip_em" class="custom-select" id="tip_em">
+            {% for tipo in tipos %}
+            <option value="{{tipo.0}}">{{tipo.1}}</option>
+            {% endfor %}
+          </select>
+          <script>
+            // Obtén el valor desde Python, por ejemplo:
+            var valorDesdePython = "{{dato.10}}"; // Asegúrate de que esto obtenga el valor correcto
+
+            // Selecciona el elemento select
+            var selectElement = document.getElementById("tip_em");
+
+            // Establece el valor predeterminado
+            selectElement.value = valorDesdePython;
+          </script>
+        </div>
+        <div class="form-group">
+          <input
+            type="date"
+            placeholder="Fecha de ingreso"
+            name="ingreso"
+            required
+            class="form-control"
+            value="{{dato.11}}"
+          />
+        </div>
+        <div class="form-group">
+          <button class="btn btn-success btn-block">Actualizar Empleado</button>
+        </div>
+      </form>
     </div>
-</div>
+  </div>
 </div>
 
 {% endblock %}

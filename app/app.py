@@ -199,7 +199,7 @@ def agregarE():
         flash('Contacto Agregado!')
 
     #    return render_template('gestionEmpleados.html',data=nombreArchivo)
-        return redirect(url_for('gestionEmpleados'))
+        return redirect(url_for('admin_routes.gestion_empleados'))
 
 # Para editar empleados
 
@@ -282,7 +282,7 @@ def actualizar_empleados(id, archivo_a_eliminar):
             """, (nombre, apellido, documento, contrato, pais, puesto, estado, telefono, cliente, id_tipo, fecha_ingreso, id))
         conexion.connection.commit()
         flash('Contacto actualizado!')
-        return redirect(url_for('gestionEmpleados'))
+        return redirect(url_for('admin_routes.gestion_empleados'))
 
 # Para eliminar empleados
 
@@ -295,7 +295,7 @@ def borrarE(id, archivo_a_eliminar):
     flash('Contacto Removido!')
     os.remove(os.path.join(app.root_path, 'static',
                            'empleados', archivo_a_eliminar))
-    return redirect(url_for('gestionEmpleados'))
+    return redirect(url_for('admin_routes.gestion_empleados'))
 
 @app.route('/agregar_Clientes', methods=['POST'])
 def agregar_Clientes():
@@ -333,7 +333,7 @@ def agregar_Clientes():
         conexion.connection.commit()
         flash('Contacto Agregado!')
 
-        return redirect(url_for('gestionClientes'))
+        return redirect(url_for('admin_routes.gestion_clientes'))
 
 
 # Para editar Clientes
@@ -389,7 +389,7 @@ def actualizar_clientes(id, archivo_a_eliminar):
             """, (razon, ruc, email, contrato, telefono, id))
         conexion.connection.commit()
         flash('Contacto actualizado!')
-        return redirect(url_for('gestionClientes'))
+        return redirect(url_for('admin_routes.gestion_clientes'))
 
 
 # Para eliminar clientes
@@ -403,7 +403,7 @@ def borrarC(id, archivo_a_eliminar):
     flash('Contacto Removido!')
     os.remove(os.path.join(app.root_path, 'static',
                            'clientes', archivo_a_eliminar))
-    return redirect(url_for('gestionClientes'))
+    return redirect(url_for('admin_routes.gestion_clientes'))
 
 # Ver empleados del cliente
 
@@ -452,7 +452,7 @@ def filtrar_asistencias(id_empleado):
     if infos:
         return render_template('editar_asistencias.html', infos=infos, current_month=selected_month, current_year=selected_year,   month_name=month_name)
     else:
-        return redirect(url_for('editar_Pasistencia', id=id_empleado))
+        return redirect(url_for('admin_routes.editar_Pasistencia', id=id_empleado))
 # Borrar asistencia
 
 
@@ -466,7 +466,7 @@ def borrarAsistencia(id, id_asistencia):
 
     conexion.connection.commit()
     # flash('Asistencia Removida!')
-    return redirect(url_for('editar_Pasistencia', id=id))
+    return redirect(url_for('admin_routes.editar_Pasistencia', id=id))
 
 
 # Aca Ira cuando actualicemos asistencia

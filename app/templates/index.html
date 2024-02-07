@@ -33,7 +33,10 @@
                 src="../static/imagenes/logo.png"
                 alt="logoAstil"
               />
-              <form action="{{ url_for('login_admin') }}" method="POST">
+              <form
+                action="{{ url_for('admin_routes.login_admin') }}"
+                method="POST"
+              >
                 <h2 class="text-center">Iniciar Sesión</h2>
                 <div class="form-group">
                   <input
