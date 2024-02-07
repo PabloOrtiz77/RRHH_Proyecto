@@ -1,0 +1,8 @@
+.vscode 
+app/__pycache__
+node_modules
+*.pyc
+__pycache__
+env/
+astil.sql
+static/

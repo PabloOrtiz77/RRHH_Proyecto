@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ver Archivos</title>
+    <link rel="stylesheet" href="../static/css/main.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+    <style>
+        .modal-content img {
+            width: 100%;
+            max-height: 80vh; /* Ajusta la altura máxima según tus necesidades */
+            object-fit: contain; /* Mantiene la proporción de la imagen */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <a class="btn btn-secondary" href="/archivos">Volver</a>
+    <h2 class="text-center mb-4">Archivos Guardados</h2>
+    <form class="form-inline mb-4">
+        <input class="form-control mr-sm-2" type="text" placeholder="Buscar por nombre" id="searchInput">
+        <button class="btn btn-outline-success my-2 my-sm-0" type="button" onclick="buscarArchivos()">Buscar</button>
+    </form>
+    <div class="row">
+        {% for file in files %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <img src="{{ url_for('static', filename='archivos/' + file) }}" class="card-img-top" alt="{{ file }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ file }}</h5>
+                        <a href="#" class="btn btn-primary" data-toggle="modal" data-target="#modal{{ loop.index }}">Ver Archivo</a>
+                        <a href="{{ url_for('static', filename='archivos/' + file) }}" class="btn btn-primary" download>Descargar Archivo</a>
+                        <button class="btn btn-danger" onclick="eliminarArchivo('{{ file }}')">Eliminar Archivo</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal -->
+            <div class="modal fade" id="modal{{ loop.index }}" tabindex="-1" role="dialog" aria-labelledby="modalLabel{{ loop.index }}" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document"> <!-- Ajusta la clase modal-lg para un tamaño más grande -->
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalLabel{{ loop.index }}">{{ file }}</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+<!-- Modifica el enlace del PDF para abrirlo en una nueva pestaña -->
+                            <a href="{{ url_for('static', filename='archivos/' + file) }}" class="btn btn-primary" target="_blank">Ver Archivo</a>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                            <button type="button" class="btn btn-danger" onclick="eliminarArchivo('{{ file }}')">Eliminar Archivo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    function buscarArchivos() {
+        // Obtén el valor del campo de búsqueda
+        var searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        
+        // Filtra los archivos que coinciden con el término de búsqueda
+        var files = document.querySelectorAll('.card-title');
+        for (var i = 0; i < files.length; i++) {
+            var fileName = files[i].innerText.toLowerCase();
+            var card = files[i].closest('.col-md-4');
+            
+            if (fileName.includes(searchTerm)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        }
+    }
+    function eliminarArchivo(nombreArchivo) {
+        if (confirm("¿Seguro que desea eliminar este archivo?")) {
+            // Realiza una solicitud AJAX para eliminar el archivo
+            $.ajax({
+                url: '/eliminar-archivo',
+                type: 'POST',
+                data: { archivo: nombreArchivo },
+                success: function(response) {
+                    console.log(response);
+                    // Recarga la página para reflejar los cambios después de la eliminación
+                    location.reload();
+                },
+                error: function(error) {
+                    console.error(error);
+                    alert('Error al eliminar el archivo.');
+                }
+            });
+        }
+    }
+</script>
+
+<script src="https://code.jquery.com/jquery-3.5.0.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+
+</body>
+</html>

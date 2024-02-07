@@ -1,0 +1,78 @@
+<!-- <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deducciones</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .btn-flat {
+            margin-right: 5px;
+        }
+
+        .table {
+            background-color: #fff;
+        }
+
+        .modal-content {
+            background-color: #fff;
+        }
+
+        /* Contenedor para centrar y ajustar el ancho */
+        .container-custom {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body> -->
+    {% extends './layout.html' %}
+
+    {% block body %}
+    
+    {% with mensajes=get_flashed_messages() %}
+    {% if mensajes %}
+    {% for mensaje in mensajes %}
+    <!-- Estos son estilos de boostrap para la parte de mensajes -->
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{mensaje}}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+    <div class="" style="margin:0px auto">
+        <form action="{{ url_for('Guardar_deduccion', id=deductions[0]) }}" method="post">
+            <!-- <input type="hidden" id="decid" name="decid" value="{{ deductions[0] }}"> -->
+            <label for="edit_description">Editar Descripción</label>
+            <div class="form-group">
+                <input type="text" value="{{ deductions[1] }}" id="edit_description" name="edit_description" required>
+            </div> 
+            <label for="edit_amount">Editar Monto</label>
+            <div class="form-group">
+                <input type="text" value="{{ deductions[2] }}" id="edit_amount" name="edit_amount" required>
+            </div>     
+            <br> 
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+
+            </div>                     
+        </form>
+        </div>
+        
+    </div>
+    {% endblock %}   
+<!-- </body>
+</html> -->

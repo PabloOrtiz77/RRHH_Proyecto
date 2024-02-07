@@ -1,0 +1,49 @@
+{% extends './layout.html' %} 
+
+{% block body %}
+<div class="col-md-6 offset-md-1"style="margin: 5px auto;" >
+<nav class="navbar navbar-dark bg-primary">
+    <div class="container">
+      <a class="navbar-brand" href="/admin/gestionclientes">INICIO</a>
+
+       <form class="d-flex" action="/admin/gestionclientes/buscar" method="post" enctype="multipart/form-data">
+         <input name="buscar" class="form-control me-3" type="search" placeholder="Ruc" aria-label="Search">
+         <button class="btn btn-outline-success" style="color: black;" type="submit">Buscar</button>
+       </form>
+      
+      <a class="navbar-brand" href="{{url_for('volverAdmin')}}">Salir</a> 
+    </div>
+</div>
+</nav>
+<div class="container pt-4">
+<div class="col-md-4 offset-md-4">
+    <div class="card card-body">
+        <form action="/actualizarC/{{dato.0}}/{{dato.4}}" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <input type="text" placeholder="Razon Social" name="razon" required value="{{dato.1}}" class="form-control">
+            </div>
+            <div class="form-group">
+                <input type="text" placeholder="Ruc" name="ruc"required value="{{dato.2}}" class="form-control">
+            </div>
+            <div class="form-group">
+                <input type="email"  placeholder="Email" name="email"required class="form-control" value="{{dato.3}}">
+  
+            </div>
+            <div class="form-group">
+                <input type="text" placeholder="Telefono" name="telefono"required value="{{dato.5}}" class="form-control">
+            </div>
+            <div class="form-group">
+                <div class="custom-file">
+                    <input type="file" class="custom-file-input" name="subir" id="subir" aria-describedby="inputGroupFileAddon01" accept=".pdf">
+                    <label class="custom-file-label" for="inputGroupFile01">Selecciona un Archivo PDF</label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+            <button class="btn btn-success btn-block ">Actualizar Cliente</button>
+            </div>
+        </form>
+    </div>
+</div>
+</div>
+{% endblock %}

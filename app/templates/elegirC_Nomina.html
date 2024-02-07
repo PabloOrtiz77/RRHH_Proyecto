@@ -1,0 +1,32 @@
+{% extends './layout.html' %} 
+
+{% block body %}
+<div class="Cont" style="display: flex;flex-direction:column">
+<nav class="navbar navbar-expand-lg bg-primary" data-bs-theme="dark">
+ 
+      <form class="d-flex" action="/Clientenomina" method="post">
+        <input value="" class="form-control me-sm-2" name="RUC_C" type="search" placeholder="RUC CLIENTE ">
+        <button class="btn btn-secondary my-2 my-sm-0" type="submit">Buscar</button>
+      </form>
+
+</nav>
+<form action="/Clientenomina" method="post">
+  <div class="card text-center">
+    <div class="card-header">
+      Elige un cliente 
+    </div>
+    <div class="form-group">
+        <div class="card-body">
+            <select name="selectCliente" id="selectCliente" class="custom-select">
+                {% for dato in datos %}
+                    <option value="{{dato.0}}">{{dato.1}}</option>
+                {% endfor %}
+            </select>
+        </div>
+          <button  class="btn btn-primary">Ir a Nominas</button>
+    </div>
+  </div><br>
+  <!-- <a class="btn btn-primary guardar-button" href="/admin/inicio">Volver</a> -->
+</form>
+</div>
+{% endblock %}

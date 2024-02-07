@@ -1,0 +1,57 @@
+{% extends './layout.html' %} 
+
+{% block body %}
+<div class="container pt-5" >
+    <div class="row" style="margin:0px auto">
+    <div class="col-md-5">
+        <div class=" card card-body">
+         <form action="/agregar_Falta" method="post">
+            <div class="form-group">
+                <h3>Agregar Falta</h3>
+                </div>
+            <div class="form-group">
+            <label for="fecha">Selecciona una fecha:</label>
+            <input type="date" id="fecha" name="fecha">
+            </div>
+            <div class="form-group">
+            <label for="doc">Nro Documento:</label>
+            <input type="text" placeholder="Nro Documento" id="doc" name="doc" required>
+            </div>
+            <div class="form-group">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </form>
+
+    </div>  
+    </div>
+    <div class="col-md-7">
+        <h2>
+            Registro Faltas
+        </h2>
+        <table class="table table-striped table-bordered bg-white table-sm">
+            <thead>
+                
+                <th>Fecha</th>
+                <th>Documento</th>
+                <th>Nombre</th>
+                <th>Acción</th>
+            </thead>
+            <tbody>
+                {% for falta in faltas %}
+                                        <tr>
+                                            <td>{{falta.3}}</td>
+                                            <td>{{ falta.2 }}</td>
+                                            <td>{{ falta.0+' '+falta.1 }}</td>
+                    
+                                            <td>
+                                                <a class="btn btn-danger btn-sm delete btn-flat" href="/borrar_falta/{{falta.2}}/{{falta.3}}"><i class="fa fa-trash"></i> Eliminar</a>
+                                            </td>
+                                        </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+
+</div>
+{% endblock %}

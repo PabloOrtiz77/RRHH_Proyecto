@@ -1,0 +1,190 @@
+{% extends './layout.html' %} 
+
+{% block body %}
+
+    <div class="col-md-6 offset-md-1"style="margin: 0px auto;" >
+    <nav class="navbar navbar-dark bg-primary">
+            <div class="container">
+            <a class="navbar-brand" href="/admin/gestion">INICIO</a>
+    
+            <form class="d-flex" action="/admin/gestion/buscar" method="post" enctype="multipart/form-data">
+                <input name="buscar" class="form-control me-3" type="search" placeholder="Numero de documento" aria-label="Search">
+                <button class="btn btn-outline-success" style="color: black;" type="submit">Buscar</button>
+            </form>
+            
+            <a class="navbar-brand" href="{{url_for('volverAdmin')}}">Salir</a> 
+            </div>
+    </nav>
+    </div>      
+    
+    <div class="container pt-4">
+        <div class="row">
+          <!--Parte de mensajes  -->
+        <div class="col-md-3">
+        {% with mensajes=get_flashed_messages() %}
+        {% if mensajes %}
+        {% for mensaje in mensajes %}
+        <!-- Estos son estilos de boostrap para la parte de mensajes -->
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{mensaje}}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <!-- Fin Parte mensajes -->
+        
+    
+        <!-- Parte para agregar empleados -->
+        <div class=" card card-body" >
+            <form action="/agregar_empleado" method="post" autocomplete="off" enctype="multipart/form-data">
+                <div class="form-group">
+                    <input type="text" placeholder="Nombre Completo" name="nombre" required class="form-control">
+
+                </div>
+                <div class="form-group">
+                    <input type="text" placeholder="Apellido Completo" name="apellido"required class="form-control">
+    
+                </div>
+                <div class="form-group">
+                    <input type="number"  placeholder="Nro documento" name="documento"required class="form-control">
+    
+                </div>
+                <div class="form-group">
+                    <select name="cliente" class="custom-select">
+                        {% for data in dato %}
+                            <option value="{{data.0}}">{{data.1}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                    <div class="form-group">
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" name="subir" id="subir" aria-describedby="inputGroupFileAddon01" accept=".pdf" required>
+                            <label class="custom-file-label" for="inputGroupFile01">Archivo PDF</label>
+                        </div>
+                    </div>
+                    <!-- <input type="file" name="subir" id="subir" accept=".jpg .png"> -->
+                
+                <div class="form-group">
+                    <input type="text" placeholder="Telefono" name="telefono"required class="form-control">
+                </div>
+                <!-- conboboxs -->
+                <div class="form-group">
+                    <select name="pais"  class="custom-select">
+                        {% for nacionalidad in nacionalidades %}
+                            <option value="{{nacionalidad.0}}">{{nacionalidad.1}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select name="puesto"  class="custom-select">
+                        {% for puesto in puestos %}
+                         <option value="{{puesto.0}}">{{puesto.1}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select name="tip_em"  class="custom-select">
+                        {% for tipo in tipos %}
+                         <option value="{{tipo.0}}">{{tipo.1}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ingreso"> Fecha de Ingreso:</label>
+                    <input type="date" id="ingreso"  placeholder="Fecha de ingreso"  name="ingreso"required class="form-control">
+                </div>
+                <!-- aca termina -->
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary btn-lg btn-block">Agregar Empleado</button>
+                </div>
+                
+            </form>
+        </div>
+        </div>
+    <!-- Fin parte para agregar empleados -->
+    
+    <div class="col-md-7">
+        <!-- Esta es la tabla donde se veran los datos -->
+        <table class="table table-striped table-bordered bg-white table-sm">
+            <!-- Para los encabezados -->
+            <thead> 
+                <tr style="text-align: center;">
+                    <td>Id Empleado</td>
+                    <td>Nombre</td>
+                    <td>Apellido</td>
+                    <td>Documento</td>
+                    <td>Contrato</td>
+                    <td>Nacionalidad</td>
+                    <td>Categoria</td>
+                    <td>Telefono</td>
+                    <td>Empresa</td>
+                    <td>T.Empleado</td>
+                    <td>F.ingreso</td>
+                    <td>Operaciones</td>
+                </tr>
+            </thead>
+            <!-- aca obtendremos los datos que recuperamos desde la base de datos -->
+            <tbody>
+                {% for info in infos %}
+                <tr>
+                    <td>{{info.0}}</td>
+                    <td>{{info.1}}</td>
+                    <td>{{info.2}}</td>
+                    <td>{{info.3}}</td>
+                    <td>
+                        <!-- <div class="image-container">
+                            <img class="small-image" src="{{ url_for('static', filename='imagenes/pdf-icon-producto.png') }}" alt="PDF Icon" width="50px" height="50px" data-toggle="modal" data-target="#modal{{ info.0 }}">
+                        </div> -->
+                                             
+                                <!-- <h5 class="card-title">{{ info.4 }}</h5> -->
+                        <a href="#" style="display: inline-block;" class="btn btn-primary" data-toggle="modal" data-target="#modal{{ loop.index }}">Ver</a>
+                           
+                        
+                         <!-- Modal -->
+                        <div class="modal fade" id="modal{{ loop.index }}" tabindex="-1" role="dialog" aria-labelledby="modalLabel{{ loop.index }}" aria-hidden="true">
+                                <div class="modal-dialog modal-lg" role="document"> <!-- Ajusta la clase modal-lg para un tamaño más grande -->
+                                    <div class="modal-content"> 
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="modalLabel{{ loop.index }}">{{  info.4 }}</h5>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                                                <span aria-hidden="true">&times;</span>
+                                            </button>
+                                        </div>
+                                        <div class="modal-body">
+                <!--                    Modifica el enlace del PDF para abrirlo en una nueva pestaña -->
+                                            <a href="{{ url_for('static', filename='empleados/' + info.4) }}" class="btn btn-primary" target="_blank">Ver Archivo</a>
+
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                                            <!-- <button type="button" class="btn btn-danger" onclick="eliminarArchivo('{{ file }}')">Eliminar Archivo</button> -->
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+                    </td>
+                    <td>{{info.5}}</td>
+                    <td>{{info.6}}</td>
+                    <td>{{info.8}}</td>
+                    <td>{{info.9}}</td>
+                    <td>{{info.10}}</td>
+                    <td>{{info.11}}</td>
+                    <td>
+                        <!-- lo mismo en el edit -->
+                        <a href="/edit/{{info.0}}" class="btn btn-secondary">Editar</a>
+                        <!-- paso el id para saber que registro voy a borrar -->
+                        <a href="/delet/{{info.0}}/{{info.4}}" class="btn btn-danger btn-delete" >Borrar</a>
+                    </td>
+                </tr>
+                {% endfor %}   
+            </tbody>
+        </table>
+    </div>
+        </div>
+    </div> 
+
+
+{% endblock %} 

@@ -1,0 +1,56 @@
+{% extends './layout.html' %} 
+
+{% block body %}
+<div class="container pt-4" style="display: flex;flex-direction:column">
+    {% with mensajes=get_flashed_messages() %}
+    {% if mensajes %}
+    {% for mensaje in mensajes %}
+    <!-- Estos son estilos de boostrap para la parte de mensajes -->
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{mensaje}}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+    
+    <h1>Nómina de Salarios</h1>
+    <!-- como hago que a lado del titulo tenga un select de jornaleros y mensualeros, sin son jornaleros quiero esta tabla luego que hice pero si son mensualeros quiero otra tabla en el mismo luegar con algunos items empleados en la ultima posicion es el campo del id del tipo de empleado el id 3 es de jornaleros y el 4 de mensualeros  -->
+    
+    <table class="table table-striped table-bordered bg-white table-sm">
+        
+        <thead>
+            
+            <tr>
+                <th>ID Empleado</th>
+                <th>Nombre Completo</th>
+                <th>Sueldo Bruto</th>
+                <th>Deducciones IPS</th>
+                <th>Retiros</th>
+                <th>Sueldo Neto</th>
+                <th>Fecha</th>
+                <th>Generar Impresion</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for empleado in empleados %}
+            <tr>
+                <td>{{ empleado.0 }}</td>
+                <td>{{ empleado.1+" "+empleado.2 }}</td>
+                <td>{{ empleado.8 }}</td>
+                <td>{{ empleado.10 }}</td>
+                <td>{{ empleado.11 }}</td>
+                <td>{{ empleado.12 }}</td>
+                <td>{{empleado.9}}</td>
+                <td style="text-align: center;">
+                    <a href="{{ url_for('generar_pdf', empleado_id=empleado.0, fecha=empleado.9 ) }}" class="btn btn-primary">Impresion</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+{% endblock %}

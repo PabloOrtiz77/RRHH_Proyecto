@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bienvenidos</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <script src="/static/js/script.js" defer></script>
+  </head>
+  <body>
+    {% if mensaje_alerta %}
+    <script>
+      // JavaScript para mostrar una alerta
+      alert("{{ mensaje_alerta }}");
+    </script>
+    {% endif %}
+    <main>
+      <div class="contenedor__todo">
+        <div class="caja__trasera">
+          <div class="caja__trasera--login">
+            <h3>Ya tienes una cuenta?</h3>
+            <p>Inicia Sesión para entrar a la página</p>
+            <button id="inicioSesion">Iniciar Sesión</button>
+          </div>
+          <div class="caja__trasera--register">
+            <h3>Aun no tienes cuenta?</h3>
+            <p>Regístrate para que puedas iniciar sesión</p>
+            <button id="registrarse">Registrarse</button>
+          </div>
+        </div>
+        <!-- formulario de login y registro -->
+        <div class="contenedor__login--register">
+          <!-- login -->
+          <form
+            action="{{ url_for('client_routes.login_clientes') }}"
+            method="POST"
+            class="formulario__login"
+          >
+            <h2>Iniciar Sesión</h2>
+            <input type="text" placeholder="Usuario" name="Usuario" required />
+            <input
+              type="password"
+              placeholder="Contraseña"
+              name="Contrasena"
+              required
+            />
+            <button>Entrar</button>
+            <br /><br /><a href="{{url_for('index')}}">Volver</a>
+          </form>
+          <!-- registro -->
+          <form
+            action="{{ url_for('client_routes.registro_clientes') }}"
+            method="POST"
+            class="formulario__register"
+          >
+            <h2>Registrarse</h2>
+            <input
+              type="text"
+              placeholder="Empresa"
+              name="nombre_completo"
+              required
+            />
+            <input type="text" placeholder="RUC" name="documento" required />
+            <input type="text" placeholder="Usuario" name="usuario" required />
+            <input
+              type="password"
+              placeholder="Contraseña"
+              name="contrasena"
+              required
+            />
+            <input
+              type="number"
+              value="2"
+              placeholder="Contraseña"
+              name="tipo"
+              class="tipo"
+              style="display: none"
+              required
+            />
+            <button>Registrarse</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

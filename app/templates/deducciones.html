@@ -1,0 +1,155 @@
+<!-- <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deducciones</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .btn-flat {
+            margin-right: 5px;
+        }
+
+        .table {
+            background-color: #fff;
+        }
+
+        .modal-content {
+            background-color: #fff;
+        }
+
+        /* Contenedor para centrar y ajustar el ancho */
+        .container-custom {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body> -->
+{% extends './layout.html' %}
+
+<div >
+    {% block body %}
+    
+    {% with mensajes=get_flashed_messages() %}
+    {% if mensajes %}
+    {% for mensaje in mensajes %}
+    <!-- Estos son estilos de boostrap para la parte de mensajes -->
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{mensaje}}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+    <div class="container-custom" style="width: 40em; margin:0px auto">
+        <h1 class="mt-4 mb-4">Deducciones</h1>
+
+        <a style="margin-bottom: 5px;" href="#addnew" data-toggle="modal" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-plus"></i> Nuevo</a>
+        <a style="margin-bottom: 5px;" href="/deducciones" data-toggle="modal" class="btn btn-secondary btn-sm btn-flat"><i class="fa fa-plus"></i> Refrescar</a>
+        <!-- <a href="/admin/inicio" data-toggle="modal" class="btn btn-primary btn-sm btn-flat"><i class="fa fa-plus"></i> Volver</a> -->
+
+        <table id="deductions-table" class="table table-bordered" style="background-color: aliceblue;">
+            <thead>
+                <th>Descripción</th>
+                <th>Monto</th>
+                <th>Acción</th>
+            </thead>
+            <tbody>
+                {% for dato in deductions %}
+                <tr>
+                    <td>{{ dato.1 }}</td>
+                    <td>{{ dato.2 }}</td>
+                    <td>
+                        <a class="btn btn-success btn-sm edit btn-flat" href="/editar_deducion/{{dato.0}}"><i class="fa fa-edit"></i> Editar</a>
+                        <a class="btn btn-danger btn-sm delete btn-flat" href="/borrar_deducion/{{dato.0}}"><i class="fa fa-trash"></i> Eliminar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal para agregar nueva deducción -->
+    <div id="addnew" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Nueva Deducción</h4>
+                </div>
+                <div class="modal-body">
+                    <!-- Contenido del formulario para agregar deducción -->
+                    <form id="addForm">
+                        <input type="text" placeholder="Descripcion" id="description" name="description" required>
+                        <br>
+                        <input type="text" placeholder="Monto" id="amount" name="amount" required>
+                        <br> <br>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha2/js/bootstrap.bundle.min.js"></script>
+    
+
+    <script>
+        $(document).ready(function() {
+            // Ejemplo de script para abrir el modal de agregar nueva deducción
+            $('#addnew').on('shown.bs.modal', function () {
+                $('#addForm').submit(function(e) {
+                    e.preventDefault();
+                    var formData = {
+                        description: $('#description').val(),
+                        amount: $('#amount').val()
+                    };
+    
+                    $.ajax({
+                        type: 'POST',
+                        url: '/agregar_deduccion',
+                        data: formData,
+                        dataType: 'json',
+                        success: function(response) {
+                            alert(response.message);
+                            $('#addnew').modal('hide');
+                            actualizarTabla(response.deductions);
+                        },
+                        error: function(error) {
+                            console.error('Error al agregar deducción:', error.responseText);
+                        }
+                    });
+                });
+            });
+    
+        })
+            
+          
+    </script>
+</div>
+{% endblock %}   
+    
+    
+<!-- </body>
+</html> -->

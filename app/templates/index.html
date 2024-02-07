@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bienvenidos</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="static/css/admin.css" />
+  </head>
+  <body>
+    {% if mensaje_alerta %}
+    <script>
+      // JavaScript para mostrar una alerta
+      alert("{{ mensaje_alerta }}");
+    </script>
+    {% endif %}
+
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <!-- Formulario de login -->
+              <img
+                class="logoA"
+                src="../static/imagenes/logo.png"
+                alt="logoAstil"
+              />
+              <form action="{{ url_for('login_admin') }}" method="POST">
+                <h2 class="text-center">Iniciar Sesión</h2>
+                <div class="form-group">
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Usuario"
+                    name="Usuario"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <input
+                    type="password"
+                    class="form-control"
+                    placeholder="Contraseña"
+                    name="Contrasena"
+                    required
+                  />
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                  Entrar
+                </button>
+                <a
+                  href="{{ url_for('client_routes.clientes') }}"
+                  class="mt-2 d-block"
+                  >Acceso Clientes</a
+                >
+                <a href="{{ url_for('empleados') }}" class="mt-2 d-block"
+                  >Acceso Empleados</a
+                >
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>
