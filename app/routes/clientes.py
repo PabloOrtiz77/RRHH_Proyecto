@@ -1,4 +1,8 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, g, render_template
+from flask import request, redirect, url_for
+
+
+
 
 client_routes = Blueprint('client_routes', __name__)
 
@@ -13,7 +17,7 @@ def clientes():
 def login_clientes():
     usuario = request.form.get('Usuario')
     contra = request.form.get('Contrasena')
-    cursor = conexion.connection.cursor()
+    cursor = g.conexion.cursor()
     sql = "SELECT * FROM usuarios WHERE usuario=%s AND contrasena=%s AND tipo_usuario=%s"
     valores = (usuario, contra, 2)
     cursor.execute(sql, valores)
@@ -26,13 +30,13 @@ def login_clientes():
     else:
         cursor.close()
         mensaje_alerta = "Usuario Erroneo!"
-        return redirect(url_for('clientes', mensaje_alerta=mensaje_alerta))
+        return redirect(url_for('client_routes.clientes', mensaje_alerta=mensaje_alerta))
 
 
 # Aca se hara el registro del cliente
 @client_routes.route('/', methods=['POST'])
 def registro_clientes():
-    cursor = conexion.connection.cursor()
+    cursor = g.conexion.cursor()
     nombre_completo = request.form.get('nombre_completo')
     documento = request.form.get('documento')
     usuario = request.form.get('usuario')
@@ -54,12 +58,12 @@ def registro_clientes():
         valores = (nombre_completo, documento,
                    usuario, contrasena, tipoUsuario)
         cursor.execute(query, valores)
-        conexion.connection.commit()
+        g.conexion.commit()
         cursor.close()
         return render_template('clientes.html')
     else:
         cursor.close()
         mensaje_alerta = "Complete todos los campos!"
-        return redirect(url_for('clientes', mensaje_alerta=mensaje_alerta))
+        return redirect(url_for('client_routes.clientes', mensaje_alerta=mensaje_alerta))
 
 
