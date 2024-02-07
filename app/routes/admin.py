@@ -1,17 +1,18 @@
 from flask import Blueprint, g, render_template
-from flask import request, redirect, url_for
-
-
+from flask import request, redirect, url_for, flash
+from datetime import datetime
+from utils.utils import dibujar
+import calendar
 
 
 admin_routes = Blueprint('admin_routes', __name__)
 
 
-@app.route('/admin/inicio', methods=['POST'])
+@admin_routes.route('/inicio', methods=['POST'])
 def login_admin():
     usuario = request.form.get('Usuario')
     contra = request.form.get('Contrasena')
-    cursor = conexion.connection.cursor()
+    cursor = g.conexion.cursor()
     sql = "SELECT * FROM usuarios WHERE usuario=%s AND contrasena=%s AND tipo_usuario=%s"
     valores = (usuario, contra, 1)
     cursor.execute(sql, valores)
@@ -26,16 +27,16 @@ def login_admin():
         mensaje_alerta = "Usuario Erroneo!"
         return redirect(url_for('index', mensaje_alerta=mensaje_alerta))
     
-@app.route('/admin/inicio')
+@admin_routes.route('/inicio')
 def volverAdmin():
     return render_template('acceso_admin.html')
 
 
- ruta principal Para la gestion de empleados
+#ruta principal Para la gestion de empleados
 
-@app.route('/admin/gestion')
+@admin_routes.route('/gestion')
 def gestionEmpleados():
-    cursor = conexion.connection.cursor()
+    cursor = g.conexion.cursor()
     # Aca extraemos los datos que hay en la seccion de empleados
     cursor.execute("""
         SELECT e.idEmpleados,e.nombre_completo,e.apellido_completo,e.documento,e.contrato,n.Nacionalidad,p.Categoria,e.idEstado,e.telefono,c.razon_social,tip.descripcion_tipo,Fecha_de_ingreso	
@@ -58,11 +59,11 @@ def gestionEmpleados():
 
 
 # Para BUSCAR empleados
-@app.route('/admin/gestion/buscar', methods=['POST'])
+@admin_routes.route('/gestion/buscar', methods=['POST'])
 def buscar():
     buscar = request.form.get('buscar')
     if buscar:
-        cursor = conexion.connection.cursor()
+        cursor = g.conexion.cursor()
 
         cursor.execute(f"""
         SELECT e.idEmpleados,e.nombre_completo,e.apellido_completo,e.documento,e.contrato,n.Nacionalidad,p.Categoria,e.idEstado,e.telefono,c.razon_social,tip.descripcion_tipo,Fecha_de_ingreso,e.id_cliente	
@@ -97,9 +98,9 @@ def buscar():
 # Crud Para Clientes
 
 
-@app.route('/admin/gestionclientes')
+@admin_routes.route('/gestionclientes')
 def gestionClientes():
-    cursor = conexion.connection.cursor()
+    cursor = g.conexion.cursor()
     # Aca extraemos los datos que hay en la seccion de clientes
     cursor.execute("""
     SELECT * FROM clientes""")
@@ -108,12 +109,12 @@ def gestionClientes():
     return render_template('gestion_clientes.html', infos=data)
 
 
-@app.route('/admin/gestionclientes/buscar', methods=['POST'])
+@admin_routes.route('/gestionclientes/buscar', methods=['POST'])
 def buscarC():
     buscar = request.form.get('buscar')
     print(buscar)
     if buscar:
-        cursor = conexion.connection.cursor()
+        cursor = g.conexion.cursor()
 
         cursor.execute(f"""SELECT * FROM clientes
                         WHERE ruc='{buscar}'
@@ -131,16 +132,16 @@ def buscarC():
 
 # Planilla de Asistencia
 
-@app.route('/admin/planilla/elegir')
+@admin_routes.route('/planilla/elegir')
 def ElegirC():
-    cursor = conexion.connection.cursor()
+    cursor = g.conexion.cursor()
     cursor.execute(f'SELECT * FROM clientes')
     dato = cursor.fetchall()
     return render_template('elegirC.html', datos=dato)
 
 
 
-@app.route('/admin/planilla/asistencia', methods=['GET', 'POST'])
+@admin_routes.route('/planilla/asistencia', methods=['GET', 'POST'])
 def Planilla():
     # aca el ruc asi que tengo que hacer una  modificacion para que sea solo uno de los dos
     resultado = 0
@@ -148,7 +149,7 @@ def Planilla():
     # print("hola"+ruc)
     # este es para el nav de la barra de busqueda por ruc
     if ruc != None:
-        cursor = conexion.connection.cursor()
+        cursor = g.conexion.cursor()
         cursor.execute(f"""SELECT id_cliente FROM clientes WHERE ruc={ruc}""")
         data2 = cursor.fetchall()
         resultado = dibujar(data2[0][0])
@@ -160,9 +161,9 @@ def Planilla():
     return render_template('planilla_asistencia.html', dia_mes=resultado[4], dia=resultado[3], fecha_actual=resultado[2], infos=resultado[0], dato=resultado[1])
 
 
-@app.route('/admin/asistencia/guardar/<int:id>/<int:id_c>', methods=['POST'])
+@admin_routes.route('/asistencia/guardar/<int:id>/<int:id_c>', methods=['POST'])
 def guardar_asistencia(id, id_c):
-    cursor = conexion.connection.cursor()
+    cursor = g.conexion.cursor()
     dia = request.form.get('dia')
     fecha = request.form.get('fecha')
     print(fecha)
@@ -189,7 +190,7 @@ def guardar_asistencia(id, id_c):
     valores = (dia, fecha, ep1, sp1, ep2, sp2,
                total_horas_trabajadas, id, id_c)
     cursor.execute(query, valores)
-    conexion.connection.commit()
+    g.conexion.commit()
 
     # Aca iniciara la parte de las nominas para dejar en 0 luego actualizar a medida que pasan los dias del mes
 
@@ -218,12 +219,12 @@ def guardar_asistencia(id, id_c):
             query = "INSERT INTO nominas_salario(id_empleado, sueldo, fecha, Deducciones, Retiros, Salario_Neto) VALUES (%s, %s, %s, %s, %s, %s)"
             valores = (id, 0, fecha, 0, 0, 0)
             cursor.execute(query, valores)
-            conexion.connection.commit()
+            g.conexion.commit()
     else:
         query = "INSERT INTO nominas_salario(id_empleado,sueldo,fecha,Deducciones,Retiros,Salario_Neto) VALUES (%s, %s, %s, %s, %s,%s)"
         valores = (id, 0, fecha, 0, 0, 0)
         cursor.execute(query, valores)
-        conexion.connection.commit()
+        g.conexion.commit()
     # Fin inicio Nominas
 
     cursor.close()
@@ -234,7 +235,7 @@ def guardar_asistencia(id, id_c):
 # aca estare editando los dias correspondientes del mes
 
 
-@app.route('/admin/planilla/editar/<id>')
+@admin_routes.route('/planilla/editar/<id>')
 def editar_Pasistencia(id):
     # lógica para obtener el mes y el año actual
     current_month = datetime.now().month
@@ -244,7 +245,7 @@ def editar_Pasistencia(id):
     month_name = calendar.month_name
 
     # lógica para obtener los datos del empleado
-    cursor = conexion.connection.cursor()
+    cursor = g.conexion.cursor()
     cursor.execute(f"""SELECT asis.dia,e.documento,e.nombre_completo,e.apellido_completo,asis.fecha,asis.primer_turno_E,asis.primer_turno_S,asis.segundo_turno_E,asis.segundo_turno_S,e.idEmpleados,asis.id_asistencia,asis.id_cliente
     FROM `empleados` AS e INNER JOIN `asistencias` AS asis ON e.idEmpleados=asis.id_empleado
     WHERE e.idEmpleados={id}
