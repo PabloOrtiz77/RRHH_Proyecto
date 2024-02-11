@@ -1,5 +1,5 @@
 from flask import g
-import datetime
+from datetime import datetime
 # aca dibuja los empleados y demas que trabajan para los clientes
 def dibujar(razon):
     cursor = g.conexion.cursor()
@@ -8,7 +8,7 @@ def dibujar(razon):
     SELECT e.idEmpleados,e.documento,e.nombre_completo,e.apellido_completo,e.documento,e.contrato,n.Nacionalidad,p.Categoria,e.idEstado,e.telefono,c.razon_social,c.id_cliente	
     FROM `empleados` AS e INNER JOIN `nacionalidad` AS n ON e.idNacionalidad=n.idNacionalidad 
     INNER JOIN `puesto` AS p ON p.idPuesto=e.idPuesto INNER JOIN `clientes` as c ON e.id_cliente=c.id_cliente
-    WHERE e.id_cliente={razon};""")
+    WHERE e.id_cliente={razon} AND e.id_tipo_empleado = 3;""")
     data = cursor.fetchall()
 
     cursor.execute(f"""SELECT * FROM clientes WHERE id_cliente={razon}""")

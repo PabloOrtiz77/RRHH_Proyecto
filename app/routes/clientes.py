@@ -1,7 +1,7 @@
 from flask import Blueprint, g, render_template
 from flask import request, redirect, url_for
-
-
+from ..utils.User import User
+from flask_login import login_user, login_required
 
 
 
@@ -14,6 +14,7 @@ def clientes():
     return render_template("clientes.html")
 
 # Aca se hace la validacion de inicio de sesion de el cliente
+
 @client_routes.route('/inicio', methods=['POST'])
 def login_clientes():
     usuario = request.form.get('Usuario')
@@ -26,11 +27,11 @@ def login_clientes():
     numero_filas = len(datos)
 
     if numero_filas > 0:
-        print(datos)
         contrasena_hash = datos[0][4]
-        print(contrasena_hash, contra)
         if g.bcrypt.check_password_hash(contrasena_hash, contra):
             cursor.close()
+            user = User(datos[0][0])  # assuming the first column is the user id
+            login_user(user)  # log the user in
             return render_template('acceso_cliente.html')
         else:
             cursor.close()

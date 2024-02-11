@@ -11,13 +11,44 @@ from flask_bcrypt import Bcrypt  # para encriptar contra
 from reportlab.pdfgen import canvas
 import json
 import tempfile
-from routes.clientes import client_routes
-from routes.admin import admin_routes
+from .routes.clientes import client_routes
+from .routes.admin import admin_routes
 
+# Para el login 
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from .utils.User import User
 
 app = Flask(__name__)
+
+#Para el login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = ''
+
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User(user_id)
+
+
+
+
+@app.route('/protected')
+@login_required
+def protected():
+    return 'Logged in as: ' + current_user.get_id()   
+
+
+
+
 app.register_blueprint(client_routes, url_prefix='/clientes')
 app.register_blueprint(admin_routes, url_prefix='/admin')
+
+
+
+
+
 
 app.config["UPLOAD_FOLDER"] = "app/static/empleados"  # especifica la ruta
 EXTENCIONES_PERMITIDAS = set(
@@ -91,6 +122,7 @@ def empleados():
 def cerrar_sesion():
     # Elimina la información de la sesión al cerrar sesión
     # 'usuario' es el nombre de la clave que almacena la información del usuario
+    logout_user()
     session.pop('usuario', None)
     # Usar código 303 para indicar "See Other"
     return redirect(url_for('index'), code=303)
@@ -102,7 +134,7 @@ def cerrar_sesion():
 def login_empleados():
     usuario = request.form.get('Usuario')
     contra = request.form.get('Contrasena')
-   
+
     cursor = conexion.connection.cursor()
     sql = "SELECT * FROM usuarios WHERE usuario=%s AND tipo_usuario=%s"
     valores = (usuario, 3)
@@ -115,6 +147,8 @@ def login_empleados():
             contrasena_hash = dato[4]
             if bcrypt.check_password_hash(contrasena_hash, contra):
                 cursor.close()
+                user = User(dato[0])  # assuming the first column is the user id
+                login_user(user)  # log the user in
                 return render_template('acceso_empleado.html')
         cursor.close()
         mensaje_alerta = "Usuario o contraseña incorrectos!"
@@ -148,11 +182,13 @@ def registro_empleados():
 
     if (con == 4):
         query = "INSERT INTO usuarios(nombre_completo,documento,usuario,contrasena,tipo_usuario) VALUES (%s, %s, %s, %s, %s)"
-        valores = (nombre_completo, documento,
-                   usuario, constrasena_hash, tipoUsuario)
+        valores = (nombre_completo, documento, usuario, constrasena_hash, tipoUsuario)
         cursor.execute(query, valores)
         conexion.connection.commit()
+        user_id = cursor.lastrowid  # get the ID of the newly inserted row
         cursor.close()
+        user = User(user_id)  # create a User object with the new ID
+        login_user(user)  # log the user in
         return render_template('empleados.html')
     else:
         cursor.close()
@@ -164,7 +200,8 @@ def registro_empleados():
 @app.route('/agregar_empleado', methods=['POST'])
 def agregarE():
     if request.method == 'POST':
-
+        apellido = request.form.get('apellido')
+        documento = request.form.get('documento')
         file = request.files["subir"]
         # Para obtener el nombre del archivo
         # La ruta donde se encuentra el archivo actual
@@ -173,10 +210,7 @@ def agregarE():
     # print(file ,file.filename)
         print(nombreArchivo)
         if extensiones(nombreArchivo):
-            extension = os.path.splitext(nombreArchivo)[1]
-            # nuevoNombreFile = (nombreArchivo + extension) #No hace falta agregar extension
-
-            nuevoNombreFile = (nombreArchivo)
+            nuevoNombreFile = (documento + "_" + nombreArchivo).replace(' ', '')
             print('Permitido!')
             upload_path = os.path.join(
                 basepath, 'static/empleados', nuevoNombreFile)
@@ -190,8 +224,7 @@ def agregarE():
         # Hata aqui parte imagen#
 
         nombre = request.form.get('nombre')
-        apellido = request.form.get('apellido')
-        documento = request.form.get('documento')
+        
     #    contrato=request.form.get('contrato')
         pais = request.form.get('pais')  # Obtiene el valor del primer select
         puesto = request.form.get('puesto')
@@ -316,21 +349,19 @@ def agregar_Clientes():
         # La ruta donde se encuentra el archivo actual
         basepath = os.path.dirname(__file__)
         nombreArchivo = secure_filename(file.filename)
-
-        if extensiones(nombreArchivo):
-            extension = os.path.splitext(nombreArchivo)[1]
-            # nuevoNombreFile = (nombreArchivo + extension) #No hace falta agregar extension
-
-            nuevoNombreFile = (nombreArchivo)
-            print('Permitido!')
-            upload_path = os.path.join(
-                basepath, 'static/clientes', nuevoNombreFile)
-            file.save(upload_path)
         # Parte imagen
         razon = request.form.get('razon')
         ruc = request.form.get('ruc')
         email = request.form.get('email')
         telefono = request.form.get('telefono')
+        if extensiones(nombreArchivo):
+            nuevoNombreFile = (razon + "_"+ nombreArchivo).replace(" ", "")
+
+            print('Permitido!')
+            upload_path = os.path.join(
+                basepath, 'static/clientes', nuevoNombreFile)
+            file.save(upload_path)
+       
         # contrato = request.form.get('contrato')
     #    print(nombre,apellido)
         cursor = conexion.connection.cursor()

@@ -1,12 +1,22 @@
 from flask import Blueprint, g, render_template
 from flask import request, redirect, url_for, flash
+from flask_login import login_user, login_required, current_user, logout_user
 from datetime import datetime
-from utils.utils import dibujar
+from ..utils.utils import dibujar
 import calendar
+from ..utils.User import User
+
+
 
 
 admin_routes = Blueprint('admin_routes', __name__)
 
+@admin_routes.before_request
+def require_login():
+    print(request.endpoint)
+    if request.endpoint == 'admin_routes.login_admin' and request.method == 'POST' :
+        return
+    login_required(lambda: None)()
 
 @admin_routes.route('/inicio', methods=['POST'])
 def login_admin():
@@ -20,6 +30,8 @@ def login_admin():
     numero_filas = len(datos)
 
     if numero_filas > 0:
+        user = User(datos[0])
+        login_user(user) 
         cursor.close()
         return render_template('acceso_admin.html')
     else:
@@ -146,18 +158,21 @@ def Planilla():
     # aca el ruc asi que tengo que hacer una  modificacion para que sea solo uno de los dos
     resultado = 0
     ruc = request.form.get('RUC_C')
-    # print("hola"+ruc)
+    #print("hola"+ruc)
     # este es para el nav de la barra de busqueda por ruc
     if ruc != None:
         cursor = g.conexion.cursor()
-        cursor.execute(f"""SELECT id_cliente FROM clientes WHERE ruc={ruc}""")
-        data2 = cursor.fetchall()
-        resultado = dibujar(data2[0][0])
+        cursor.execute("SELECT id_cliente FROM clientes WHERE ruc = %s", (ruc,))
+        data2 = cursor.fetchall()    
+        if data2:
+            resultado = dibujar(data2[0][0])
     else:
         razon = request.form.get('cliente')
         resultado = dibujar(razon)
-    # aca estoy trallendo el id
-
+    # aca estoy trayendo el id
+    if resultado == 0 :
+        flash('No se encontraron resultados para el cliente seleccionado.', 'error')
+        return redirect(url_for('admin_routes.ElegirC'))
     return render_template('planilla_asistencia.html', dia_mes=resultado[4], dia=resultado[3], fecha_actual=resultado[2], infos=resultado[0], dato=resultado[1])
 
 
@@ -257,3 +272,12 @@ def editar_Pasistencia(id):
         return render_template('editar_asistencias.html', infos=infos, current_month=current_month, current_year=current_year, month_name=month_name)
     else:
         return render_template("error.html")
+
+
+@admin_routes.route('/vacaciones')
+def gestion_vacaciones():
+    cursor = g.conexion.cursor()
+    cursor.execute("""
+    SELECT * FROM vacaciones""")
+    data = cursor.fetchall()
+    return render_template('gestion_vacaciones.html', info=data)
