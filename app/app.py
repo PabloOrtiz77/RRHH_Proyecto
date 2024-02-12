@@ -13,7 +13,7 @@ import json
 import tempfile
 from .routes.clientes import client_routes
 from .routes.admin import admin_routes
-
+from .utils.utils import dibujar
 # Para el login 
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from .utils.User import User
@@ -23,7 +23,7 @@ app = Flask(__name__)
 #Para el login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = ''
+login_manager.login_view = 'index'
 
 
 
@@ -34,10 +34,7 @@ def load_user(user_id):
 
 
 
-@app.route('/protected')
-@login_required
-def protected():
-    return 'Logged in as: ' + current_user.get_id()   
+
 
 
 
@@ -75,12 +72,36 @@ app.config['MYSQL_DB'] = 'astil'
 
 conexion = MySQL(app)
 
-
+public_routes = [
+    ('index', 'GET'),
+    ('admin_routes.login_admin',  'POST'),
+    ('client_routes.login_clientes', 'POST'),
+    ('client_routes.login_clientes', 'GET'),
+    ('login_empleados', 'POST'),
+    ('login_empleados', 'GET'),
+    ('empleados', 'GET'),
+    ('registro_empleados', 'POST'),
+    ('client_routes.registro_clientes', 'POST'),
+    ('client_routes.login_clientes', 'POST'),
+    ('client_routes.clientes', 'GET'),
+    ('endpoint3', 'PUT'),
+    ('static', 'GET')  # Add static route to public
+]
 # Configurar una conexion global para los blueprints
 @app.before_request
 def before_request():
     g.conexion = conexion.connection
     g.bcrypt = bcrypt
+
+    if (request.endpoint, request.method) not in public_routes:
+        if not current_user.is_authenticated:
+            return redirect(url_for('index'))
+
+@app.route('/protected')
+def protected():
+    return 'Logged in as: ' + current_user.get_id()   
+
+
 # servicios este es para que funcione el flashed
 app.secret_key = 'mysecretkey'
  
@@ -88,6 +109,10 @@ app.secret_key = 'mysecretkey'
 
 # templates = Jinja2Templates(directory="templates")
 app.template_folder = 'templates'
+
+
+
+
 
 
 @app.route('/')
@@ -105,8 +130,23 @@ def pagina_no_encontrada(error):
     return redirect(url_for('index'))
 
 
+def get_cliente():
+    cursor = conexion.connection.cursor()
+    cursor.execute(f'SELECT * FROM usuarios WHERE id_usuario={current_user.get_id()}')
+    
+    print(current_user.get_id())
+    usuario = cursor.fetchall()
+    documento = usuario[0][2]
+    print(documento)
+    cursor.execute(f'SELECT * FROM clientes WHERE ruc={documento}')
+    cliente = cursor.fetchall()
+    return cliente[0]
 
-
+@app.route('/perfil_clientes')
+def perfil_clientes():
+    cliente = get_cliente()
+    print(cliente)
+    return render_template("perfil_clientes.html", cliente=cliente)
 
 # nos dirigira a la pagina que seleccionamos , acceso a empleado
 @app.route('/empleados')
@@ -245,9 +285,8 @@ def agregarE():
     #    return render_template('gestionEmpleados.html',data=nombreArchivo)
         return redirect(url_for('admin_routes.gestion_empleados'))
 
+
 # Para editar empleados
-
-
 @app.route('/edit/<id>')
 def modificarE(id):
     cursor = conexion.connection.cursor()
@@ -263,8 +302,59 @@ def modificarE(id):
     tipos = cursor.fetchall()
     return render_template('editar_empleado.html', dato=dato[0], datodos=data2, nacionalidades=nacionalidad, puestos=puestos, tipos=tipos)
 
+#util para obtener empleado
+def get_empleado():
+    cursor = conexion.connection.cursor()
+    cursor.execute(f'SELECT * FROM usuarios WHERE id_usuario={current_user.get_id()}')
+    
+    usuario = cursor.fetchall()
+    documento = usuario[0][2]
+    print(documento)
+    cursor.execute(f'SELECT * FROM empleados WHERE documento={documento}')
+    empleado = cursor.fetchall()
+    return empleado[0]
+
+
 # aca actualiza los empleados
 
+@app.route('/empleados/perfil')
+@login_required
+def perfil_empleado():
+    empleado = get_empleado()
+    return render_template('perfil_empleado.html', empleado=empleado)
+
+
+@app.route('/notaspermiso')
+def empleado_notas_permiso():
+    empleado = get_empleado()
+    cursor = conexion.connection.cursor()
+    cursor.execute(f"SELECT * FROM vacaciones WHERE idEmpleado = {empleado[0]}")
+    vacaciones = cursor.fetchall()
+
+    
+
+    return render_template('empleado_notas_permiso.html', data=vacaciones)    
+
+@app.route('/empleados_crear_nota', methods=['GET', 'POST'])
+def empleados_crear_nota():
+    if request.method == 'POST': 
+        fecha_inicio = request.form.get('fechaInicio')
+        fecha_fin = request.form.get('fechaFin')
+        empleado = get_empleado()
+        id_empleado = empleado[0]
+        id_empresa = empleado[9]
+        cursor = conexion.connection.cursor()
+        cursor.execute(f'INSERT INTO vacaciones (idEmpleado,idEmpresa,fechaInicio, fechaFin) VALUES ({id_empleado},{id_empresa},{fecha_inicio},{fecha_fin})')
+        conexion.connection.commit()
+        flash('Nota creada correctamente')
+        return redirect(url_for('empleado_notas_permiso'))
+     
+    return render_template('empleados_crear_nota.html')
+
+
+@app.route('/empleados/nominas')
+def empleado_nominas():
+    return render_template('empleado_nominas.html')
 
 @app.route('/actualizarE/<id>/<archivo_a_eliminar>', methods=['POST'])
 def actualizar_empleados(id, archivo_a_eliminar):
@@ -1315,6 +1405,140 @@ def borrar_adelanto(id):
 
     return redirect(url_for('Adelantos'))
 
+
+#util para obtener empleado
+def get_ruc():
+    cursor = conexion.connection.cursor()
+    cursor.execute(f'SELECT * FROM usuarios WHERE id_usuario={current_user.get_id()}')
+    
+    usuario = cursor.fetchall()
+    documento = usuario[0][2]
+   
+    return documento
+
+
+
+@app.route('/clientes/planilla/asistencia', methods=['GET', 'POST'])
+def planilla_cliente():
+    # aca el ruc asi que tengo que hacer una  modificacion para que sea solo uno de los dos
+    resultado = 0
+    
+    ruc = get_ruc()
+    print(ruc)
+    #print("hola"+ruc)
+    # este es para el nav de la barra de busqueda por ruc
+    if ruc != None:
+        cursor = g.conexion.cursor()
+        cursor.execute("SELECT id_cliente FROM clientes WHERE ruc = %s", (ruc,))
+        data2 = cursor.fetchall()    
+        if data2:
+            resultado = dibujar(data2[0][0])
+    else:
+        razon = request.form.get('cliente')
+        resultado = dibujar(razon)
+    # aca estoy trayendo el id
+    if resultado == 0 :
+        flash('No se encontraron resultados para el cliente seleccionado.', 'error')
+        return render_template('acceso_cliente.html')
+    return render_template('cliente_planilla.html', dia_mes=resultado[4], dia=resultado[3], fecha_actual=resultado[2], infos=resultado[0], dato=resultado[1])
+
+
+@app.route('/clientes/asistencia/guardar/<int:id>/<int:id_c>', methods=['POST'])
+def guardar_asistencia(id, id_c):
+    cursor = g.conexion.cursor()
+    dia = request.form.get('dia')
+    fecha = request.form.get('fecha')
+    print(fecha)
+    ep1 = request.form.get('entrada_primer_turno1')
+    sp1 = request.form.get('salida_primer_turno1')
+    ep2 = request.form.get('entrada_segundo_turno2')
+    sp2 = request.form.get('salida_segundo_turno2')
+
+    # 07:00 12:00 13:00 17:00 20
+    # Convierte las cadenas en objetos de tiempo
+    entrada_manana = datetime.strptime(ep1, "%H:%M")
+    salida_manana = datetime.strptime(sp1, "%H:%M")
+    entrada_tarde = datetime.strptime(ep2, "%H:%M")
+    salida_tarde = datetime.strptime(sp2, "%H:%M")
+
+    # Calcula las diferencias de tiempo
+    duracion_manana = salida_manana - entrada_manana
+    duracion_tarde = salida_tarde - entrada_tarde
+
+    # Suma las duraciones de ambos turnos para obtener el total de horas trabajadas en el día
+    total_horas_trabajadas = duracion_manana + duracion_tarde
+
+    query = "INSERT INTO asistencias(dia,fecha,primer_turno_E,primer_turno_S,segundo_turno_E,segundo_turno_S,horas_tot_dia,id_empleado,id_cliente) VALUES (%s, %s, %s, %s, %s,%s, %s, %s, %s)"
+    valores = (dia, fecha, ep1, sp1, ep2, sp2,
+               total_horas_trabajadas, id, id_c)
+    cursor.execute(query, valores)
+    g.conexion.commit()
+
+    # Aca iniciara la parte de las nominas para dejar en 0 luego actualizar a medida que pasan los dias del mes
+
+    # Ver temas de la fecha que recupera mal y el tema de la logica de las fechas diferentes
+    cursor.execute(f"""SELECT * FROM nominas_salario WHERE id_empleado={id}""")
+    nomina_emopleado = cursor.fetchall()
+    fecha_guardado = datetime.strptime(fecha, '%Y-%m-%d')
+    mes_guardado = fecha_guardado.month
+    ano_guardado = fecha_guardado.year
+
+    # Fin
+
+    if nomina_emopleado:
+        print(nomina_emopleado[0][3])
+        fecha_actual = nomina_emopleado[0][3]
+        mes_actual = fecha_actual.month
+        ano_actual = fecha_actual.year
+        print(ano_actual, mes_actual)
+        # Convertir ambos meses a cadenas con dos dígitos
+        mes_actual_str = "{:02d}".format(mes_actual)
+        mes_guardado_str = "{:02d}".format(mes_guardado)
+        print(mes_actual_str, mes_guardado_str)
+        # Aca si el mes y ano son diferentes insertar
+        if mes_actual_str != mes_guardado_str or ano_actual != ano_guardado:
+            # ver si el empleado es jornalero
+            query = "INSERT INTO nominas_salario(id_empleado, sueldo, fecha, Deducciones, Retiros, Salario_Neto) VALUES (%s, %s, %s, %s, %s, %s)"
+            valores = (id, 0, fecha, 0, 0, 0)
+            cursor.execute(query, valores)
+            g.conexion.commit()
+    else:
+        query = "INSERT INTO nominas_salario(id_empleado,sueldo,fecha,Deducciones,Retiros,Salario_Neto) VALUES (%s, %s, %s, %s, %s,%s)"
+        valores = (id, 0, fecha, 0, 0, 0)
+        cursor.execute(query, valores)
+        g.conexion.commit()
+    # Fin inicio Nominas
+
+    cursor.close()
+    flash('Asistencia Agregada!')
+    resultado = dibujar(id_c)
+    return render_template('planilla_asistencia.html', dia_mes=resultado[4], dia=resultado[3], fecha_actual=resultado[2], infos=resultado[0], dato=resultado[1])
+
+# aca estare editando los dias correspondientes del mes
+
+
+@app.route('/clientes/planilla/editar/<id>')
+def editar_Pasistencia(id):
+    # lógica para obtener el mes y el año actual
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+
+    # Obtenemos el nombre de los meses
+    month_name = calendar.month_name
+
+    # lógica para obtener los datos del empleado
+    cursor = g.conexion.cursor()
+    cursor.execute(f"""SELECT asis.dia,e.documento,e.nombre_completo,e.apellido_completo,asis.fecha,asis.primer_turno_E,asis.primer_turno_S,asis.segundo_turno_E,asis.segundo_turno_S,e.idEmpleados,asis.id_asistencia,asis.id_cliente
+    FROM `empleados` AS e INNER JOIN `asistencias` AS asis ON e.idEmpleados=asis.id_empleado
+    WHERE e.idEmpleados={id}
+    AND MONTH(asis.fecha) = {current_month}
+    AND YEAR(asis.fecha) = {current_year};""")
+    infos = cursor.fetchall()
+    # aca modifique
+    if infos:
+        return render_template('editar_asistencias.html', infos=infos, current_month=current_month, current_year=current_year, month_name=month_name)
+    else:
+        return render_template("error.html")
 
 # Fin adelantos
 if __name__ == '__main__':

@@ -11,12 +11,7 @@ from ..utils.User import User
 
 admin_routes = Blueprint('admin_routes', __name__)
 
-@admin_routes.before_request
-def require_login():
-    print(request.endpoint)
-    if request.endpoint == 'admin_routes.login_admin' and request.method == 'POST' :
-        return
-    login_required(lambda: None)()
+
 
 @admin_routes.route('/inicio', methods=['POST'])
 def login_admin():
@@ -280,4 +275,4 @@ def gestion_vacaciones():
     cursor.execute("""
     SELECT * FROM vacaciones""")
     data = cursor.fetchall()
-    return render_template('gestion_vacaciones.html', info=data)
+    return render_template('gestion_vacaciones.html', infos=data)

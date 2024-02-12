@@ -12,7 +12,7 @@
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     />
-    <link rel="stylesheet" href="static/css/admin.css" />
+    <link rel="stylesheet" href="/static/css/admin.css" />
   </head>
   <body>
     {% if mensaje_alerta %}
@@ -25,12 +25,30 @@
     <div class="container mt-5">
       <div class="row justify-content-center">
         <div class="col-md-4">
+          {% with mensajes=get_flashed_messages() %} {% if mensajes %} {% for
+          mensaje in mensajes %}
+          <!-- Estos son estilos de boostrap para la parte de mensajes -->
+          <div
+            class="alert alert-success alert-dismissible fade show"
+            role="alert"
+          >
+            {{mensaje}}
+            <button
+              type="button"
+              class="close"
+              data-dismiss="alert"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          {% endfor %} {% endif %} {% endwith %}
           <div class="card">
             <div class="card-body">
               <!-- Formulario de login -->
               <img
                 class="logoA"
-                src="../static/imagenes/logo.png"
+                src="/static/imagenes/logo.png"
                 alt="logoAstil"
               />
               <form

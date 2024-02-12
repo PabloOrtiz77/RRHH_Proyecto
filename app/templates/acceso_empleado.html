@@ -1,11 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <h1>Parte empleado</h1>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bienvenido</title>
+    <link
+      rel="stylesheet"
+      href="{{url_for('static',filename='css/barraLateral.css')}}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{url_for('static',filename='css/bosque.css')}}"
+    />
+    <!-- Estilos para la ventana emergente (modal) -->
+    <style>
+      .modal1 {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #fff;
+        padding: 20px;
+        border: 1px solid #ccc;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+      }
+
+      .overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="container">
+        <!-- <div class="logo">
+            <label ></label><img src="../static/imagenes/logo.png" alt="logoAstil" class="imglogo"></label>
+        </div> -->
+        <div class="btn-menu">
+          <label for="btn-menu">☰</label>
+        </div>
+
+        <nav class="menu">
+          <!-- <a href="#">Inicio</a> -->
+          <a href="https://astilgroup.com.py/#nuestro-servicios" target="_blank"
+            >Servicios</a
+          >
+          <a href="https://astilgroup.com.py/" target="_blank">Nosotros</a>
+          <a href="https://astilgroup.com.py/#team-2" target="_blank"
+            >Contacto</a
+          >
+          <a
+            href="{{ url_for('cerrar_sesion') }}"
+            onclick="return confirmarCerrarSesion()"
+            >Cerrar Sesión</a
+          >
+        </nav>
+      </div>
+    </header>
+    <div class="capa"></div>
+    <!--	--------------->
+    <input type="checkbox" id="btn-menu" />
+    <div class="container-menu">
+      <div class="cont-menu">
+        <nav>
+          <a href="{{url_for('perfil_empleado')}}">Ver Perfil</a>
+          <a href="{{url_for('empleado_notas_permiso')}}">Notas de Permiso</a>
+          <a href="{{url_for('empleado_nominas')}}">Recibo de nominas</a>
+        </nav>
+        <label for="btn-menu">✖️</label>
+      </div>
+    </div>
+    <div class="centered">
+      <img
+        class="small-image"
+        src="{{ url_for('static', filename='imagenes/Logo-nuevo-Astil.webp') }}"
+        alt="Imagen Pequeña"
+      />
+    </div>
+
+    <!-- Scripts -->
+    <script>
+      // Para el tema de cerrar sesion
+      function confirmarCerrarSesion() {
+        var confirmacion = confirm("¿Estás seguro de cerrar la sesión?");
+        if (confirmacion) {
+          // Si el usuario confirma, redirige a la ruta de cerrar sesión
+          window.location.href = "{{ url_for('cerrar_sesion') }}";
+        }
+        // Si el usuario cancela, no hace nada
+        return false;
+      }
+    </script>
+  </body>
 </html>

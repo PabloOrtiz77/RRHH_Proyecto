@@ -1,0 +1,41 @@
+<!-- FILEPATH: /c:/Users/ferre/Desktop/Projecto RRHH Pablo/Proyecto RRHH/app/templates/empleado_notas_permiso.html -->
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Employee Notes and Status</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Employee Notes and Status</h1>
+      <a class="btn btn-primary" href="{{url_for('empleados_crear_nota')}}"
+        >Add New Note</a
+      >
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Note</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for note in data %}
+          <tr>
+            <td>{{ note[0] }}</td>
+            <td>{{ note[2] }}</td>
+            <td>{{ note[3] }}</td>
+            <td>{{ note[5] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
