@@ -5,7 +5,7 @@ from datetime import datetime
 from ..utils.utils import dibujar
 import calendar
 from ..utils.User import User
-
+from ..utils import auditter
 
 
 
@@ -25,13 +25,15 @@ def login_admin():
     numero_filas = len(datos)
 
     if numero_filas > 0:
-        user = User(datos[0])
+        user = User(datos[0][0])
         login_user(user) 
         cursor.close()
+        auditter.login_log(datos[0][0])
         return render_template('acceso_admin.html')
     else:
         cursor.close()
         mensaje_alerta = "Usuario Erroneo!"
+        auditter.error_log('login error',usuario)
         return redirect(url_for('index', mensaje_alerta=mensaje_alerta))
     
 @admin_routes.route('/inicio')
@@ -239,6 +241,7 @@ def guardar_asistencia(id, id_c):
 
     cursor.close()
     flash('Asistencia Agregada!')
+    #auditter.success_log('Asistencia Agregada', current_user.get_id())
     resultado = dibujar(id_c)
     return render_template('planilla_asistencia.html', dia_mes=resultado[4], dia=resultado[3], fecha_actual=resultado[2], infos=resultado[0], dato=resultado[1])
 
@@ -264,6 +267,7 @@ def editar_Pasistencia(id):
     infos = cursor.fetchall()
     # aca modifique
     if infos:
+        auditter.success_log('Editar Asistencia', current_user.id)
         return render_template('editar_asistencias.html', infos=infos, current_month=current_month, current_year=current_year, month_name=month_name)
     else:
         return render_template("error.html")
@@ -275,4 +279,5 @@ def gestion_vacaciones():
     cursor.execute("""
     SELECT * FROM vacaciones""")
     data = cursor.fetchall()
+    
     return render_template('gestion_vacaciones.html', infos=data)

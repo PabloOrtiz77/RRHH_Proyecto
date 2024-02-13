@@ -1,42 +1,31 @@
-<!-- FILEPATH: /c:/Users/ferre/Desktop/Projecto RRHH Pablo/Proyecto RRHH/app/templates/empleado_nominas.html -->
+{% extends './layout_empleado.html' %} {% block body %}
+<div class="container">
+  <h1>Informacion de nomina</h1>
+  <a class="btn btn-primary" href="/empleados/inicio">Volver</a>
+</div>
+<div class="container">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>ID empleado</th>
+        <th>Fecha</th>
+        <th>Deducciones</th>
+        <th>Retiros</th>
+        <th>Salario Neto</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for nomina in nominas %}
+      <tr>
+        <td>{{ nomina[1] }}</td>
+        <td>{{ nomina[3] }}</td>
+        <td>{{ nomina[4] }}</td>
+        <td>{{ nomina[5] }}</td>
+        <td>{{ nomina[6] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Empleado Nominas</title>
-    <link
-      rel="stylesheet"
-      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
-    />
-  </head>
-  <body>
-    <div class="container">
-      <h1>Nomina Information</h1>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Employee ID</th>
-            <th>Fecha</th>
-            <th>Deducciones</th>
-            <th>Retiros</th>
-            <th>Salario Neto</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for nomina in nominas %}
-          <tr>
-            <td>{{ nomina[0] }}</td>
-            <td>{{ nomina[1] }}</td>
-            <td>{{ nomina[2] }}</td>
-            <td>{{ nomina[3] }}</td>
-            <td>{{ nomina[4] }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-  </body>
-</html>
+{% endblock %}

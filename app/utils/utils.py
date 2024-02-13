@@ -28,3 +28,5 @@ def dibujar(razon):
 
     fecha_actual = fecha_actual.strftime('%Y-%m-%d')
     return data, data2, fecha_actual, dia_semana, nombre_mes
+
+

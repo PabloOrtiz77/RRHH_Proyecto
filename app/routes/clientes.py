@@ -44,6 +44,11 @@ def login_clientes():
         mensaje_alerta = "Usuario Erroneo!"
         return redirect(url_for('client_routes.clientes', mensaje_alerta=mensaje_alerta))
 
+@client_routes.route('/inicio', methods=['GET'])
+def pagina_principal():
+    return render_template('acceso_cliente.html')
+
+
 
 @client_routes.route('/acceso')
 def acceso_clientes():
@@ -97,11 +102,8 @@ def get_ruc():
 @client_routes.route('/gestion')
 def gestion_empleados():
     cursor = g.conexion.cursor()
-
     ruc = get_ruc()
-    
     print(ruc)
-
     # Aca extraemos los datos que hay en la seccion de empleados
     cursor.execute("""
         SELECT e.idEmpleados,e.nombre_completo,e.apellido_completo,e.documento,e.contrato,n.Nacionalidad,p.Categoria,e.idEstado,e.telefono,c.razon_social,tip.descripcion_tipo,Fecha_de_ingreso	
@@ -127,8 +129,9 @@ def gestion_vacaciones():
     cursor = g.conexion.cursor()
     cursor.execute("""
     SELECT * FROM vacaciones""")
+    print('redireccionando')
     data = cursor.fetchall()
-    return render_template('gestion_vacaciones.html', info=data)
+    return render_template('gestion_vacaciones_cliente.html', infos=data)
 
 @client_routes.route('/vacaciones/accept/<int:id>')
 def accept_vacation(id):

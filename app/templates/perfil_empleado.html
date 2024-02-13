@@ -1,6 +1,18 @@
-<div class="profile-section">
-  <h2>{{ empleado.0 }}</h2>
-  <p>{{ empleado.1 }}</p>
-  <p>{{ empleado.2 }}</p>
-  <p>{{ empleado.3 }}</p>
+{% extends './layout_empleado.html' %} {% block body %}
+
+<div class="container">
+  <div class="col-md-6 offset-md-3">
+    <h1>Perfil</h1>
+    <a class="btn btn-primary" href="/empleados/inicio"> Atras</a>
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Nombre: {{ empleado[1] }}</h5>
+        <p class="card-text">apellido: {{ empleado[2] }}</p>
+        <p class="card-text">RUC: {{ empleado[3] }}</p>
+        <p class="card-text">Teléfono: {{ empleado[8] }}</p>
+      </div>
+    </div>
+  </div>
 </div>
+
+{% endblock %}

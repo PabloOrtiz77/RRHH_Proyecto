@@ -29,9 +29,10 @@
         >
           <thead>
             <tr>
-              <th>Razon Social</th>
+              
               <th>Ruc</th>
               <th>Monto caja ₲</th>
+              <th>Razon Social</th>
               <th style="width: 150px">Agregar Monto</th>
               <th style="width: 170px">Opciones</th>
             </tr>
@@ -40,12 +41,13 @@
             {% for dato in datos %}
             <form method="post" action="/caja/guardar/{{dato.4}}/{{dato.2}}">
               <tr>
-                <td>{{dato.1}}</td>
+                
                 <td>{{dato.4}}</td>
                 <td>
                   {{'{:,.0f}'.format(dato.3)}}
                   <!-- Display as integer with commas as thousands separators -->
                 </td>
+                <td>{{dato.1}}</td>
                 <td>
                   <input
                     type="text"

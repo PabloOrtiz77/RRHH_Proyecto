@@ -14,17 +14,32 @@ import tempfile
 from .routes.clientes import client_routes
 from .routes.admin import admin_routes
 from .utils.utils import dibujar
-# Para el login 
+# Para el login
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from .utils.User import User
+from .utils import auditter
+from flask import Flask
+
+from datetime import datetime
+
+
+from flask_apscheduler import APScheduler
+from .utils.jobs import Config
+
 
 app = Flask(__name__)
+app.config.from_object(Config())
 
-#Para el login
+
+scheduler = APScheduler()
+scheduler.init_app(app)
+scheduler.start()
+
+
+# Para el login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'index'
-
 
 
 @login_manager.user_loader
@@ -32,19 +47,8 @@ def load_user(user_id):
     return User(user_id)
 
 
-
-
-
-
-
-
-
 app.register_blueprint(client_routes, url_prefix='/clientes')
 app.register_blueprint(admin_routes, url_prefix='/admin')
-
-
-
-
 
 
 app.config["UPLOAD_FOLDER"] = "app/static/empleados"  # especifica la ruta
@@ -52,8 +56,6 @@ EXTENCIONES_PERMITIDAS = set(
     ['png', 'jpg', 'jpeg', 'gif', 'pdf'])  # como el nombre lo dice
 
 bcrypt = Bcrypt(app)  # Asegúrate de que 'app' sea tu instancia de Flask
-
-
 
 
 def extensiones(file):
@@ -88,6 +90,8 @@ public_routes = [
     ('static', 'GET')  # Add static route to public
 ]
 # Configurar una conexion global para los blueprints
+
+
 @app.before_request
 def before_request():
     g.conexion = conexion.connection
@@ -97,22 +101,14 @@ def before_request():
         if not current_user.is_authenticated:
             return redirect(url_for('index'))
 
-@app.route('/protected')
-def protected():
-    return 'Logged in as: ' + current_user.get_id()   
-
 
 # servicios este es para que funcione el flashed
 app.secret_key = 'mysecretkey'
- 
+
 # ruta principal
 
 # templates = Jinja2Templates(directory="templates")
 app.template_folder = 'templates'
-
-
-
-
 
 
 @app.route('/')
@@ -132,15 +128,16 @@ def pagina_no_encontrada(error):
 
 def get_cliente():
     cursor = conexion.connection.cursor()
-    cursor.execute(f'SELECT * FROM usuarios WHERE id_usuario={current_user.get_id()}')
-    
-    print(current_user.get_id())
+    cursor.execute(
+        f'SELECT * FROM usuarios WHERE id_usuario={current_user.get_id()}')
     usuario = cursor.fetchall()
     documento = usuario[0][2]
     print(documento)
-    cursor.execute(f'SELECT * FROM clientes WHERE ruc={documento}')
+    cursor.execute("SELECT * FROM clientes WHERE ruc=%s", (documento,))
     cliente = cursor.fetchall()
+    print(cliente)
     return cliente[0]
+
 
 @app.route('/perfil_clientes')
 def perfil_clientes():
@@ -149,6 +146,8 @@ def perfil_clientes():
     return render_template("perfil_clientes.html", cliente=cliente)
 
 # nos dirigira a la pagina que seleccionamos , acceso a empleado
+
+
 @app.route('/empleados')
 def empleados():
     return render_template("empleados.html")
@@ -162,6 +161,7 @@ def empleados():
 def cerrar_sesion():
     # Elimina la información de la sesión al cerrar sesión
     # 'usuario' es el nombre de la clave que almacena la información del usuario
+    auditter.logout_log(current_user.get_id())
     logout_user()
     session.pop('usuario', None)
     # Usar código 303 para indicar "See Other"
@@ -170,6 +170,8 @@ def cerrar_sesion():
 # Fin parte cerrar sesion
 
 # Aca se hace la validacion de inicio de sesion de el empleado
+
+
 @app.route('/empleados/inicio', methods=['POST'])
 def login_empleados():
     usuario = request.form.get('Usuario')
@@ -187,8 +189,10 @@ def login_empleados():
             contrasena_hash = dato[4]
             if bcrypt.check_password_hash(contrasena_hash, contra):
                 cursor.close()
-                user = User(dato[0])  # assuming the first column is the user id
+                # assuming the first column is the user id
+                user = User(dato[0])
                 login_user(user)  # log the user in
+                auditter.login_log(dato[0])
                 return render_template('acceso_empleado.html')
         cursor.close()
         mensaje_alerta = "Usuario o contraseña incorrectos!"
@@ -197,6 +201,11 @@ def login_empleados():
         cursor.close()
         mensaje_alerta = "Usuario no encontrado!"
         return redirect(url_for('empleados', mensaje_alerta=mensaje_alerta))
+
+
+@app.route('/empleados/inicio', methods=['GET'])
+def acceso_empleado():
+    return render_template('acceso_empleado.html')
 
 
 @app.route('/empleados', methods=['POST'])
@@ -222,12 +231,14 @@ def registro_empleados():
 
     if (con == 4):
         query = "INSERT INTO usuarios(nombre_completo,documento,usuario,contrasena,tipo_usuario) VALUES (%s, %s, %s, %s, %s)"
-        valores = (nombre_completo, documento, usuario, constrasena_hash, tipoUsuario)
+        valores = (nombre_completo, documento, usuario,
+                   constrasena_hash, tipoUsuario)
         cursor.execute(query, valores)
         conexion.connection.commit()
         user_id = cursor.lastrowid  # get the ID of the newly inserted row
         cursor.close()
         user = User(user_id)  # create a User object with the new ID
+        auditter.register_log(user_id)
         login_user(user)  # log the user in
         return render_template('empleados.html')
     else:
@@ -237,6 +248,8 @@ def registro_empleados():
 
 # Crud Gestion de empleados (cierre conexion)
 #
+
+
 @app.route('/agregar_empleado', methods=['POST'])
 def agregarE():
     if request.method == 'POST':
@@ -250,7 +263,7 @@ def agregarE():
     # print(file ,file.filename)
         print(nombreArchivo)
         if extensiones(nombreArchivo):
-            nuevoNombreFile = (documento + "_" + nombreArchivo).replace(' ', '')
+            nuevoNombreFile = (nombreArchivo).replace(' ', '')
             print('Permitido!')
             upload_path = os.path.join(
                 basepath, 'static/empleados', nuevoNombreFile)
@@ -264,7 +277,7 @@ def agregarE():
         # Hata aqui parte imagen#
 
         nombre = request.form.get('nombre')
-        
+
     #    contrato=request.form.get('contrato')
         pais = request.form.get('pais')  # Obtiene el valor del primer select
         puesto = request.form.get('puesto')
@@ -280,6 +293,8 @@ def agregarE():
                    pais, puesto, estado, telefono, cliente, tipo_em, fecha_ingreso)
         cursor.execute(query, valores)
         conexion.connection.commit()
+        auditter.success_log(
+            f'Se ha añadido el empleado {nombre}', current_user.get_id())
         flash('Contacto Agregado!')
 
     #    return render_template('gestionEmpleados.html',data=nombreArchivo)
@@ -302,11 +317,14 @@ def modificarE(id):
     tipos = cursor.fetchall()
     return render_template('editar_empleado.html', dato=dato[0], datodos=data2, nacionalidades=nacionalidad, puestos=puestos, tipos=tipos)
 
-#util para obtener empleado
+# util para obtener empleado
+
+
 def get_empleado():
     cursor = conexion.connection.cursor()
-    cursor.execute(f'SELECT * FROM usuarios WHERE id_usuario={current_user.get_id()}')
-    
+    cursor.execute(
+        f'SELECT * FROM usuarios WHERE id_usuario={current_user.get_id()}')
+
     usuario = cursor.fetchall()
     documento = usuario[0][2]
     print(documento)
@@ -328,33 +346,52 @@ def perfil_empleado():
 def empleado_notas_permiso():
     empleado = get_empleado()
     cursor = conexion.connection.cursor()
-    cursor.execute(f"SELECT * FROM vacaciones WHERE idEmpleado = {empleado[0]}")
+    cursor.execute(
+        f"SELECT * FROM vacaciones WHERE idEmpleado = {empleado[0]}")
     vacaciones = cursor.fetchall()
 
-    
+    return render_template('empleado_notas_permiso.html', data=vacaciones)
 
-    return render_template('empleado_notas_permiso.html', data=vacaciones)    
 
 @app.route('/empleados_crear_nota', methods=['GET', 'POST'])
 def empleados_crear_nota():
-    if request.method == 'POST': 
-        fecha_inicio = request.form.get('fechaInicio')
-        fecha_fin = request.form.get('fechaFin')
+    if request.method == 'POST':
+        fecha_inicio_str = request.form.get('fechaInicio')
+        fecha_fin_str = request.form.get('fechaFin')
+        # Parse the dates
+        fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d')
+        fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d')
+
+        print(fecha_inicio, fecha_fin)
         empleado = get_empleado()
         id_empleado = empleado[0]
         id_empresa = empleado[9]
         cursor = conexion.connection.cursor()
-        cursor.execute(f'INSERT INTO vacaciones (idEmpleado,idEmpresa,fechaInicio, fechaFin) VALUES ({id_empleado},{id_empresa},{fecha_inicio},{fecha_fin})')
+        query = """
+        INSERT INTO vacaciones (idEmpleado, idEmpresa, fechaInicio, fechaFin)
+        VALUES (%s, %s, %s, %s)
+        """
+        params = (id_empleado, id_empresa, fecha_inicio, fecha_fin)
+        cursor.execute(query, params)
         conexion.connection.commit()
         flash('Nota creada correctamente')
+        auditter.success_log(
+            f'Se ha añadido una nota de permiso para el empleado {empleado[1]}', current_user.get_id())
         return redirect(url_for('empleado_notas_permiso'))
-     
+
     return render_template('empleados_crear_nota.html')
 
 
 @app.route('/empleados/nominas')
 def empleado_nominas():
-    return render_template('empleado_nominas.html')
+    empleado = get_empleado()
+    cursor = conexion.connection.cursor()
+    cursor.execute(
+        f"SELECT * FROM nominas_salario WHERE id_empleado = {empleado[0]}")
+    nominas = cursor.fetchall()
+
+    return render_template('empleado_nominas.html', nominas=nominas)
+
 
 @app.route('/actualizarE/<id>/<archivo_a_eliminar>', methods=['POST'])
 def actualizar_empleados(id, archivo_a_eliminar):
@@ -416,6 +453,8 @@ def actualizar_empleados(id, archivo_a_eliminar):
             """, (nombre, apellido, documento, contrato, pais, puesto, estado, telefono, cliente, id_tipo, fecha_ingreso, id))
         conexion.connection.commit()
         flash('Contacto actualizado!')
+        auditter.success_log(
+            f'Se ha actualizado el empleado {nombre}', current_user.get_id())
         return redirect(url_for('admin_routes.gestion_empleados'))
 
 # Para eliminar empleados
@@ -427,9 +466,12 @@ def borrarE(id, archivo_a_eliminar):
     cursor.execute(f'DELETE FROM empleados WHERE idEmpleados={id}')
     conexion.connection.commit()
     flash('Contacto Removido!')
+    auditter.success_log(
+        f'Se ha eliminado el empleado con id {id}', current_user.get_id())
     os.remove(os.path.join(app.root_path, 'static',
                            'empleados', archivo_a_eliminar))
     return redirect(url_for('admin_routes.gestion_empleados'))
+
 
 @app.route('/agregar_Clientes', methods=['POST'])
 def agregar_Clientes():
@@ -445,13 +487,13 @@ def agregar_Clientes():
         email = request.form.get('email')
         telefono = request.form.get('telefono')
         if extensiones(nombreArchivo):
-            nuevoNombreFile = (razon + "_"+ nombreArchivo).replace(" ", "")
+            nuevoNombreFile = (nombreArchivo).replace(" ", "")
 
             print('Permitido!')
             upload_path = os.path.join(
                 basepath, 'static/clientes', nuevoNombreFile)
             file.save(upload_path)
-       
+
         # contrato = request.form.get('contrato')
     #    print(nombre,apellido)
         cursor = conexion.connection.cursor()
@@ -463,6 +505,8 @@ def agregar_Clientes():
         valores = (0, ruc)
         cursor.execute(query, valores)
         conexion.connection.commit()
+        auditter.success_log(
+            f'Se ha añadido el cliente {razon}', current_user.get_id())
         flash('Contacto Agregado!')
 
         return redirect(url_for('admin_routes.gestion_clientes'))
@@ -521,6 +565,9 @@ def actualizar_clientes(id, archivo_a_eliminar):
             """, (razon, ruc, email, contrato, telefono, id))
         conexion.connection.commit()
         flash('Contacto actualizado!')
+        print(current_user.get_id())
+        auditter.success_log(
+            f'Se ha actualizado el cliente {razon}', current_user.get_id())
         return redirect(url_for('admin_routes.gestion_clientes'))
 
 
@@ -533,6 +580,8 @@ def borrarC(id, archivo_a_eliminar):
     cursor.execute(f'DELETE FROM clientes WHERE id_cliente={id}')
     conexion.connection.commit()
     flash('Contacto Removido!')
+    auditter.success_log(
+        f'Se ha eliminado el cliente con id {id}', current_user.get_id())
     os.remove(os.path.join(app.root_path, 'static',
                            'clientes', archivo_a_eliminar))
     return redirect(url_for('admin_routes.gestion_clientes'))
@@ -542,6 +591,30 @@ def borrarC(id, archivo_a_eliminar):
 
 @app.route('/verEmpleados/<id_c>')
 def verEmpleados(id_c):
+    cursor = conexion.connection.cursor()
+    # Aca extraemos los datos que hay en la seccion de empleados
+
+    cursor.execute(f"""
+    SELECT e.idEmpleados,e.nombre_completo,e.apellido_completo,e.documento,e.contrato,n.Nacionalidad,p.Categoria,e.idEstado,e.telefono,c.razon_social,tip.descripcion_tipo,Fecha_de_ingreso		
+    FROM `empleados` AS e INNER JOIN `nacionalidad` AS n ON e.idNacionalidad=n.idNacionalidad 
+    INNER JOIN `puesto` AS p ON p.idPuesto=e.idPuesto INNER JOIN `clientes` as c ON e.id_cliente=c.id_cliente
+    INNER JOIN `tipo_empleado` AS tip ON tip.id_tipo_empleado=e.id_tipo_empleado
+    WHERE e.id_cliente={id_c};""")
+    data = cursor.fetchall()
+
+    cursor.execute(f"""SELECT * FROM clientes WHERE id_cliente={id_c}""")
+    data2 = cursor.fetchall()
+    cursor.execute(f"""SELECT * FROM `nacionalidad`;""")
+    nacionalidad = cursor.fetchall()  # Move this line here
+    cursor.execute(f"""SELECT * FROM `puesto`;""")
+    puestos = cursor.fetchall()  # Move this line here
+    cursor.execute(f"""SELECT * FROM `tipo_empleado`;""")
+    tipos = cursor.fetchall()
+
+    return render_template('gestion_empleados.html', infos=data, dato=data2, nacionalidades=nacionalidad, puestos=puestos, tipos=tipos)
+
+    # Fin Crud clientes
+
     cursor = conexion.connection.cursor()
     # Aca extraemos los datos que hay en la seccion de empleados
     cursor.execute(f"""
@@ -557,10 +630,11 @@ def verEmpleados(id_c):
     nacionalidad = cursor.fetchall()  # Move this line here
     cursor.execute(f"""SELECT * FROM `puesto`;""")
     puestos = cursor.fetchall()  # Move this line here
+    cursor.execute(f"""SELECT * FROM `tipo_empleado`;""")
+    tipos = cursor.fetchall()
 
-    return render_template('gestion_empleados.html', infos=data, dato=data2, nacionalidades=nacionalidad, puestos=puestos)
+    return render_template('gestion_empleados.html', infos=data, dato=data2, nacionalidades=nacionalidad, puestos=puestos, tipos=tipos)
     # Fin Crud clientes
-
 
 
 # La parte de filtrar hay que arreglar porque da error
@@ -597,6 +671,8 @@ def borrarAsistencia(id, id_asistencia):
     cursor.execute(query, (id, id_asistencia))
 
     conexion.connection.commit()
+    auditter.success_log(
+        f'Se ha eliminado la asistencia con id {id_asistencia}', current_user.get_id())
     # flash('Asistencia Removida!')
     return redirect(url_for('admin_routes.editar_Pasistencia', id=id))
 
@@ -663,7 +739,8 @@ def actualizarAsistencia(id):
     AND MONTH(asis.fecha) = {current_month}
     AND YEAR(asis.fecha) = {current_year};""")
     infos = cursor.fetchall()
-
+    auditter.success_log(
+        f'Se ha actualizado la asistencia con id {asistencia_id}', current_user.get_id())
     return render_template('editar_asistencias.html', infos=infos, current_month=current_month, current_year=current_year, month_name=month_name)
 
 
@@ -707,6 +784,8 @@ def guardar_caja(ruc, id_caja):  # Fix the parameter name
     """, (monto, id_caja))
 
     conexion.connection.commit()
+    auditter.success_log(
+        f'Se ha actualizado la caja con id {id_caja}', current_user.get_id())
 
     return redirect(url_for('cargar_caja'))
 
@@ -723,6 +802,8 @@ def borrarCaja(id):
         """, (0, id))
 
     conexion.connection.commit()
+    auditter.success_log(
+        f'Se ha eliminado el monto de la caja con id {id}', current_user.get_id())
 
     return redirect(url_for('cargar_caja'))
 # Fin Parte de la caja
@@ -786,10 +867,13 @@ def eliminar_archivo():
     try:
         os.remove(os.path.join(app.root_path, 'static',
                   'archivos', archivo_a_eliminar))
+        auditter.success_log(
+            f'Se ha eliminado el archivo {archivo_a_eliminar}', current_user.get_id())
         return jsonify({'mensaje': f'Archivo {archivo_a_eliminar} eliminado correctamente.'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-# Fin parte de archivos
+
+    # Fin parte de archivos
 
 # Parte Configuracion para cargar los Paises y Puestos
 
@@ -802,6 +886,7 @@ def Configuracion():
     nacionalidad = cursor.fetchall()  # Move this line here
     cursor.execute(f"""SELECT * FROM `puesto`;""")
     puestos = cursor.fetchall()  # Move this line here
+
     return render_template('configuracion.html', nacionalidades=nacionalidad, puestos=puestos)
 
 # CRUD DE NACIONALIDAD
@@ -817,6 +902,8 @@ def Agregar_Nacionalidad():
         cursor.execute(query, valores)
         conexion.connection.commit()
         # flash('Nacionalidad Agregada!')
+        auditter.success_log(
+            f'Se ha añadido la nacionalidad {nacionalidad}', current_user.get_id())
         return redirect(url_for('Configuracion'))
 
 
@@ -825,6 +912,8 @@ def deletN(id):
     cursor = conexion.connection.cursor()
     cursor.execute(f'DELETE FROM nacionalidad WHERE idNacionalidad={id}')
     conexion.connection.commit()
+    auditter.success_log(
+        f'Se ha eliminado la nacionalidad con id {id}', current_user.get_id())
     return redirect(url_for('Configuracion'))
 
 
@@ -833,6 +922,8 @@ def editN(id):
     cursor = conexion.connection.cursor()
     cursor.execute(f'SELECT * FROM nacionalidad WHERE idNacionalidad={id}')
     nacionalidad = cursor.fetchall()
+    auditter.success_log(
+        f'Se ha editado la nacionalidad con id {id}', current_user.get_id())
     return render_template('editar_nacionalidad.html', dato=nacionalidad[0])
 
 
@@ -848,6 +939,8 @@ def actualizarN(id):
             WHERE idNacionalidad=%s
             """, (nac, id))
         conexion.connection.commit()
+        auditter.success_log(
+            f'Se ha actualizado la nacionalidad con id {id}', current_user.get_id())
         return redirect(url_for('Configuracion'))
 # FIN CRUD DE NACIONALIDAD
 
@@ -866,6 +959,8 @@ def Agregar_Puesto():
         valores = (puesto, preciomensual, preciojornal, mensual)
         cursor.execute(query, valores)
         conexion.connection.commit()
+        auditter.success_log(
+            f'Se ha añadido el puesto {puesto}', current_user.get_id())
         # flash('Nacionalidad Agregada!')
         return redirect(url_for('Configuracion'))
 
@@ -875,6 +970,8 @@ def deletP(id):
     cursor = conexion.connection.cursor()
     cursor.execute(f'DELETE FROM puesto WHERE idPuesto={id}')
     conexion.connection.commit()
+    auditter.success_log(
+        f'Se ha eliminado el puesto con id {id}', current_user.get_id())
     return redirect(url_for('Configuracion'))
 
 
@@ -883,6 +980,8 @@ def editP(id):
     cursor = conexion.connection.cursor()
     cursor.execute(f'SELECT * FROM puesto WHERE idPuesto={id}')
     puesto = cursor.fetchall()
+    auditter.success_log(
+        f'Se ha editado el puesto con id {id}', current_user.get_id())
     return render_template('editar_puesto.html', dato=puesto[0])
 
 
@@ -903,23 +1002,28 @@ def actualizarP(id):
             WHERE idPuesto=%s
             """, (puesto, preciomensual, preciojornal, mensual, id))
         conexion.connection.commit()
+        auditter.success_log(
+            f'Se ha actualizado el puesto con id {id}', current_user.get_id())
         return redirect(url_for('Configuracion'))
 
 # FIN CRUD DE PUESTOS
 
-#Faltas Mensualeros
+# Faltas Mensualeros
+
+
 @app.route('/Faltas_Mensualeros')
 def Faltas_Mensualeros():
     cursor = conexion.connection.cursor()
     cursor.execute('SELECT * FROM faltas_mensualeros')
-    empleados= cursor.fetchall()
+    empleados = cursor.fetchall()
     cursor.execute("""
             SELECT em.nombre_completo, em.apellido_completo, em.documento,fm.fecha
             FROM faltas_mensualeros AS fm   
             INNER JOIN `empleados` AS em ON fm.documento = em.documento
         """)
     faltas = cursor.fetchall()
-    return render_template('Faltas.html',faltas=faltas)
+    return render_template('Faltas.html', faltas=faltas)
+
 
 @app.route('/agregar_Falta', methods=['POST'])
 def agregar_Falta():
@@ -927,24 +1031,29 @@ def agregar_Falta():
     fecha = request.form.get('fecha')
     documento = request.form.get('doc')
     cursor.execute(
-                "INSERT INTO faltas_mensualeros (documento, fecha) VALUES (%s, %s)", (documento, fecha))
+        "INSERT INTO faltas_mensualeros (documento, fecha) VALUES (%s, %s)", (documento, fecha))
     conexion.connection.commit()
+    auditter.success_log(
+        f'Se ha añadido una falta para el empleado con documento {documento}', current_user.get_id())
     return redirect(url_for('Faltas_Mensualeros'))
-   
 
-#Borrar Faltas
+
+# Borrar Faltas
 @app.route('/borrar_falta/<documento>/<fecha>')
 def borrar_falta(documento, fecha):
     cursor = conexion.connection.cursor()
 
     # Utiliza comillas simples alrededor de los valores en la consulta SQL
-    cursor.execute(f"DELETE FROM faltas_mensualeros WHERE documento='{documento}' AND fecha='{fecha}'")
+    cursor.execute(
+        f"DELETE FROM faltas_mensualeros WHERE documento='{documento}' AND fecha='{fecha}'")
 
     conexion.connection.commit()
+    auditter.success_log(
+        f'Se ha eliminado la falta para el empleado con documento {documento}', current_user.get_id())
 
     return redirect(url_for('Faltas_Mensualeros'))
 
-#Fin Faltas
+# Fin Faltas
 # Crud Nomina de salarios
 
 
@@ -958,29 +1067,46 @@ def ElegirC_Nomina():
     return render_template('elegirC_Nomina.html', datos=dato, tipos=tipos)
 
 
-
-
 @app.route('/Clientenomina', methods=['POST'])
 def Nomina_buscar():
     # Falta la parte de la entrada por ruc
+    cursor = conexion.connection.cursor()
+
+    # Obtener el valor del select
     id_cliente = request.form.get('selectCliente')
     if not id_cliente:
-        ruc = request.form['RUC_C']
-        cursor.execute(
-            f"SELECT id_cliente FROM clientes WHERE ruc={ruc}")
-        id_clientereq = cursor.fetchone()
-        id_cliente=id_clientereq[0]
+       ruc = request.form.get('RUC_C') 
+       if ruc:
+            cursor.execute(
+                f"SELECT id_cliente FROM clientes WHERE ruc='{ruc}'"
+            )
+            id_clientereq = cursor.fetchone()
+            if id_clientereq is not None:
+                id_cliente = id_clientereq[0]
+            else:
+                # Manejar el caso en que no se encuentra el cliente
+                return render_template('error_cliente_no_encontrado.html')
+                flash('No se encontraron Clientes con ese RUC ', 'warning')
+                return redirect(url_for('ElegirC_Nomina'))
+       else:
+            # Manejar el caso en que el RUC es nulo o vacío
+              flash('No se encontraron Clientes con ese RUC ', 'warning')
+              return redirect(url_for('ElegirC_Nomina'))
 
-    cursor = conexion.connection.cursor()
+        
     # Aca traere los jornaleros para el calculo respectivo de sus salarios
     cursor.execute(
         f"""SELECT em.idEmpleados,em.nombre_completo,em.apellido_completo,em.documento,em.idPuesto,nom.id_nomina,em.id_tipo_empleado,
         nom.id_empleado,nom.sueldo,nom.fecha,nom.Deducciones,nom.Retiros,nom.Salario_Neto 
-        FROM empleados AS em INNER JOIN  `nominas_salario` AS nom ON em.idEmpleados=nom.id_empleado  
-        WHERE em.id_cliente={id_cliente} """
+        FROM empleados AS em INNER JOIN  nominas_salario AS nom ON em.idEmpleados=nom.id_empleado  
+        WHERE em.id_cliente={id_cliente};"""
     )
     empleados = cursor.fetchall()
-
+    if not empleados:
+        # No se encontraron empleados, redirigir a ElegirC_Nomina con mensaje de alerta
+        flash('No se encontraron empleados para el cliente seleccionado', 'warning')
+        return redirect(url_for('ElegirC_Nomina'))
+    
     meses_en_espanol = [
         "enero", "febrero", "marzo", "abril", "mayo", "junio",
         "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
@@ -1002,34 +1128,35 @@ def Nomina_buscar():
         # Esta parte sería para sacar la cantidad de horas trabajadas hasta el momento y la cantidad de asistencias
         mes_fecha = fecha.month
         ano_fecha = fecha.year
-        cursor.execute(f"""
-            SELECT 
-                id_empleado,
-                MONTH(fecha) AS mes,
-                YEAR(fecha) AS ano,
-                SEC_TO_TIME(SUM(TIME_TO_SEC(horas_tot_dia))) AS total_segundos_trabajados,
-                COUNT(*) AS cantidad_registros
-            FROM asistencias
-            WHERE id_empleado = {id_empleado} AND MONTH(fecha) = {mes_fecha} AND YEAR(fecha) = {ano_fecha}
-            GROUP BY id_empleado, MONTH(fecha), YEAR(fecha);
-        """)
+        if id_tipo_empleado == 3:
+            cursor.execute(f"""
+                SELECT 
+                    id_empleado,
+                    MONTH(fecha) AS mes,
+                    YEAR(fecha) AS ano,
+                    SEC_TO_TIME(SUM(TIME_TO_SEC(horas_tot_dia))) AS total_segundos_trabajados,
+                    COUNT(*) AS cantidad_registros
+                FROM asistencias
+                WHERE id_empleado = {id_empleado} AND MONTH(fecha) = {mes_fecha} AND YEAR(fecha) = {ano_fecha}
+                GROUP BY id_empleado, MONTH(fecha), YEAR(fecha);
+            """)
 
-        # Obtener la información para salarios específica para el empleado
-        informacion_para_salarios = cursor.fetchall()
-        # Obtener las horas trabajadas en formato de horas
-        total_segundos = informacion_para_salarios[0][3]
-        # Convertir de segundos a horas
-        total_horas_trabajadas = (total_segundos.total_seconds() / 3600)
+            # Obtener la información para salarios específica para el empleado
+            informacion_para_salarios = cursor.fetchall()
+            # Obtener las horas trabajadas en formato de horas
+            total_segundos = informacion_para_salarios[0][3]
+            # Convertir de segundos a horas
+            total_horas_trabajadas = (total_segundos.total_seconds() / 3600)
 
-        # Aca vamos a traer los puestos con sus tarifas
-        cursor.execute(
-            f"""SELECT * FROM puesto WHERE idPuesto={id_puesto}""")
-        puestos = cursor.fetchall()
+            # Aca vamos a traer los puestos con sus tarifas
+            cursor.execute(
+                f"""SELECT * FROM puesto WHERE idPuesto={id_puesto}""")
+            puestos = cursor.fetchall()
 
-        precio_hora_jornalero = (puestos[0][3]/8)
-        precio_hora_mensualero = (puestos[0][2]/8)
-        pago_mensual_mensualero = puestos[0][4]
-        print(precio_hora_jornalero, precio_hora_mensualero,
+            precio_hora_jornalero = (puestos[0][3]/8)
+            precio_hora_mensualero = (puestos[0][2]/8)
+            pago_mensual_mensualero = puestos[0][4]
+            print(precio_hora_jornalero, precio_hora_mensualero,
               pago_mensual_mensualero)
 
         if id_tipo_empleado == 3:
@@ -1050,18 +1177,13 @@ def Nomina_buscar():
             conexion.connection.commit()
         else:
             # Esta parte es para los empleados mensualeros
-            cursor.execute(f"""
-                SELECT COUNT(*) AS cantidad_registros
-                FROM faltas_mensualeros AS fm   
-                WHERE fm.documento = {documento} AND MONTH(fecha)={mes_fecha};
-            """)
-
-            faltas = cursor.fetchone()
-            monto_faltas = faltas[0]* puestos[0][2]
-
-            sueldoBruto = int(pago_mensual_mensualero)
-            deducciones = int(sueldoBruto-(sueldoBruto*0.9))
-            sueldoNeto = int(sueldoBruto-deducciones-retiros-monto_faltas)
+            # Return the existing values in the nomina
+            cursor.execute(
+                f'SELECT mensual from puesto where idPuesto={id_puesto}')
+            mensual = cursor.fetchone()
+            mensual = mensual[0]
+            sueldoBruto = mensual
+            sueldoNeto = mensual - retiros - deducciones
             cursor.execute("""
                 UPDATE nominas_salario 
                 SET sueldo=%s,
@@ -1080,8 +1202,8 @@ def Nomina_buscar():
     mes_nombre = meses_en_espanol[mes_numero - 1]
 
     return render_template('Nomina_salarios.html', empleados=empleados,mes_nombre=mes_nombre,ano=ano)
-
 # Fin Crud nomina de salarios
+
 
 # Aca sera la creacion del pdf
 
@@ -1116,15 +1238,16 @@ def generar_pdf(empleado_id, fecha):
             "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
         mes_nombre = meses_en_espanol[mes_numero - 1]
 
-        if datosempleado[2]==3:
-        # Generar PDF en un archivo temporal
+        if datosempleado[2] == 3:
+            # Generar PDF en un archivo temporal
             with tempfile.NamedTemporaryFile(delete=False) as temp_pdf:
                 pdf_filename = f"recibo_pago_{datosempleado[0]}_{mes_nombre}.pdf"
 
                 # Crear PDF
                 pdf = canvas.Canvas(temp_pdf.name)
                 pdf.drawString(100, 820, f"Astil Group")
-                pdf.drawString(100, 800, f"Recibo de Pago - {mes_nombre} - {ano}")
+                pdf.drawString(
+                    100, 800, f"Recibo de Pago - {mes_nombre} - {ano}")
                 pdf.drawString(
                     100, 780, f"Nombre:  {datosempleado[0]} {datosempleado[1]}")
                 pdf.drawString(
@@ -1147,27 +1270,28 @@ def generar_pdf(empleado_id, fecha):
 
             return response
         else:
-            documento=datosempleado[3]
-            id_puesto=datosempleado[4]
+            documento = datosempleado[3]
+            id_puesto = datosempleado[4]
             cursor.execute(f"""
             SELECT COUNT(*) AS cantidad_registros
             FROM faltas_mensualeros AS fm   
             Where fm.documento = {documento} AND MONTH(fecha)={mes_numero}
         """)
-            
+
             faltas = cursor.fetchone()
             cursor.execute(
-            f"""SELECT * FROM puesto WHERE idPuesto={id_puesto}""")
+                f"""SELECT * FROM puesto WHERE idPuesto={id_puesto}""")
             puestos = cursor.fetchall()
-            monto_faltas=faltas[0]*puestos[0][2]
-            
+            monto_faltas = faltas[0]*puestos[0][2]
+
             with tempfile.NamedTemporaryFile(delete=False) as temp_pdf:
                 pdf_filename = f"recibo_pago_{datosempleado[0]}_{mes_nombre}.pdf"
 
                 # Crear PDF
                 pdf = canvas.Canvas(temp_pdf.name)
                 pdf.drawString(100, 820, f"Astil Group")
-                pdf.drawString(100, 800, f"Recibo de Pago - {mes_nombre}- 2024")
+                pdf.drawString(
+                    100, 800, f"Recibo de Pago - {mes_nombre}- 2024")
                 pdf.drawString(
                     100, 780, f"Nombre:  {datosempleado[0]} {datosempleado[1]}")
                 pdf.drawString(
@@ -1191,15 +1315,14 @@ def generar_pdf(empleado_id, fecha):
                 response = Response(
                     pdf_file.read(), content_type='application/pdf')
                 response.headers['Content-Disposition'] = f'attachment; filename="{pdf_filename}"'
-
+            auditter.success_log(
+                f'Se ha generado el recibo de pago para el empleado con documento {documento}', current_user.get_id())
             return response
-            
-            
-            
+
     else:
         return "Empleado no encontrado", 404
 
-#Fin creacion de PDF
+# Fin creacion de PDF
 
 # Decucciones
 
@@ -1229,7 +1352,8 @@ def agregar_deduccion():
 
             cursor.execute("SELECT * FROM deductions")
             deductions = cursor.fetchall()
-
+            auditter.success_log(
+                f'Se ha añadido la deducción {description}', current_user.get_id())
             return jsonify({'message': 'Deducción agregada correctamente', 'deductions': deductions})
     finally:
         cursor.close()
@@ -1243,6 +1367,8 @@ def editar_deduccion(id):
     cursor.execute(f"SELECT * FROM deductions where id={id}")
     deductions = cursor.fetchall()
     cursor.close()
+    auditter.success_log(
+        f'Se ha editado la deducción con id {id}', current_user.get_id())
     return render_template('editar_deduccion.html', deductions=deductions[0])
 
 
@@ -1260,6 +1386,8 @@ def Guardar_deduccion(id):
             WHERE id=%s
             """, (description, amount, id))
         conexion.connection.commit()
+        auditter.success_log(
+            f'Se ha actualizado la deducción con id {id}', current_user.get_id())
         return redirect(url_for('deducciones'))
 # Ruta para eliminar una deducción
 
@@ -1269,6 +1397,8 @@ def borrar_deducion(id):
     cursor = conexion.connection.cursor()
     cursor.execute(f'DELETE FROM deductions WHERE id={id}')
     conexion.connection.commit()
+    auditter.success_log(
+        f'Se ha eliminado la deducción con id {id}', current_user.get_id())
     return redirect(url_for('deducciones'))
 # Fin deducciones
 
@@ -1350,6 +1480,8 @@ def agregar_adelanto():
                     "INSERT INTO cashadvance (date_advance, employee_id, amount) VALUES (%s, %s, %s)",
                     (fecha, id_empleado, monto))
                 conexion.connection.commit()
+                auditter.success_log(
+                    f'Se ha añadido un adelanto para el empleado con id {id_empleado}', current_user.get_id())
                 return redirect(url_for('Adelantos'))
             else:
                 flash('Ya existe un adelanto para este día, mes y año.')
@@ -1397,47 +1529,50 @@ def borrar_adelanto(id):
     SET Retiros = Retiros - %s
     WHERE id_nomina = %s
 """, (monto_adelanto, id_nomina))
-
+            auditter.success_log(
+                f'Se ha eliminado el adelanto con id {id}', current_user.get_id())
             conexion.connection.commit()
 
     finally:
+
         cursor.close()
 
     return redirect(url_for('Adelantos'))
 
 
-#util para obtener empleado
+# util para obtener empleado
 def get_ruc():
     cursor = conexion.connection.cursor()
-    cursor.execute(f'SELECT * FROM usuarios WHERE id_usuario={current_user.get_id()}')
-    
+    cursor.execute(
+        f'SELECT * FROM usuarios WHERE id_usuario={current_user.get_id()}')
+
     usuario = cursor.fetchall()
     documento = usuario[0][2]
-   
-    return documento
 
+    return documento
 
 
 @app.route('/clientes/planilla/asistencia', methods=['GET', 'POST'])
 def planilla_cliente():
     # aca el ruc asi que tengo que hacer una  modificacion para que sea solo uno de los dos
     resultado = 0
-    
+
     ruc = get_ruc()
     print(ruc)
-    #print("hola"+ruc)
+    # print("hola"+ruc)
     # este es para el nav de la barra de busqueda por ruc
     if ruc != None:
         cursor = g.conexion.cursor()
-        cursor.execute("SELECT id_cliente FROM clientes WHERE ruc = %s", (ruc,))
-        data2 = cursor.fetchall()    
+        cursor.execute(
+            "SELECT id_cliente FROM clientes WHERE ruc = %s", (ruc,))
+        data2 = cursor.fetchall()
         if data2:
             resultado = dibujar(data2[0][0])
     else:
         razon = request.form.get('cliente')
         resultado = dibujar(razon)
     # aca estoy trayendo el id
-    if resultado == 0 :
+    if resultado == 0:
         flash('No se encontraron resultados para el cliente seleccionado.', 'error')
         return render_template('acceso_cliente.html')
     return render_template('cliente_planilla.html', dia_mes=resultado[4], dia=resultado[3], fecha_actual=resultado[2], infos=resultado[0], dato=resultado[1])
@@ -1511,6 +1646,8 @@ def guardar_asistencia(id, id_c):
 
     cursor.close()
     flash('Asistencia Agregada!')
+    auditter.success_log(
+        f'Se ha añadido una asistencia para el empleado con id {id}', current_user.get_id())
     resultado = dibujar(id_c)
     return render_template('planilla_asistencia.html', dia_mes=resultado[4], dia=resultado[3], fecha_actual=resultado[2], infos=resultado[0], dato=resultado[1])
 
@@ -1536,9 +1673,12 @@ def editar_Pasistencia(id):
     infos = cursor.fetchall()
     # aca modifique
     if infos:
+        auditter.success_log(
+            f'Se ha editado la asistencia para el empleado con id {id}', current_user.get_id())
         return render_template('editar_asistencias.html', infos=infos, current_month=current_month, current_year=current_year, month_name=month_name)
     else:
         return render_template("error.html")
+
 
 # Fin adelantos
 if __name__ == '__main__':

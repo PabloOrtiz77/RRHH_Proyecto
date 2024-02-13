@@ -1,4 +1,4 @@
-{% extends './layout.html' %} {% block body %}
+{% extends './layout_cliente.html' %} {% block body %}
 
 <div class="col-md-6 offset-md-1" style="margin: 0px auto">
   <nav class="navbar navbar-dark bg-primary">
@@ -27,9 +27,7 @@
         </button>
       </form>
 
-      <a class="navbar-brand" href="{{url_for('admin_routes.volver_admin')}}"
-        >Salir</a
-      >
+      <a class="navbar-brand" href="/clientes/in">Salir</a>
     </div>
   </nav>
 </div>

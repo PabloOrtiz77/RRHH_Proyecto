@@ -1,13 +1,12 @@
-{% extends './layout.html' %} {% block body %}
-
-<div class="col-md-6 offset-md-1" style="margin: 0px auto">
+{% extends './layout_cliente.html' %} {% block body %}
+<div class="col-md-6 offset-md-1" style="margin: 5px auto">
   <nav class="navbar navbar-dark bg-primary">
     <div class="container">
-      <a class="navbar-brand" href="/admin/gestion">INICIO</a>
+      <a class="navbar-brand" href="/admin/gestionclientes">INICIO</a>
 
       <form
         class="d-flex"
-        action="/admin/gestion/buscar"
+        action="/admin/gestionclientes/buscar"
         method="post"
         enctype="multipart/form-data"
       >
@@ -15,7 +14,7 @@
           name="buscar"
           class="form-control me-3"
           type="search"
-          placeholder="Numero de documento"
+          placeholder="Ruc"
           aria-label="Search"
         />
         <button
@@ -33,11 +32,10 @@
     </div>
   </nav>
 </div>
-
 <div class="container pt-4">
   <div class="row">
     <!--Parte de mensajes  -->
-    <div class="col-md-3">
+    <div class="col-md-4">
       {% with mensajes=get_flashed_messages() %} {% if mensajes %} {% for
       mensaje in mensajes %}
       <!-- Estos son estilos de boostrap para la parte de mensajes -->
@@ -58,16 +56,15 @@
       <!-- Parte para agregar empleados -->
       <div class="card card-body">
         <form
-          action="/agregar_empleado"
+          action="/agregar_Clientes"
           method="post"
-          autocomplete="off"
           enctype="multipart/form-data"
         >
           <div class="form-group">
             <input
               type="text"
-              placeholder="Nombre Completo"
-              name="nombre"
+              placeholder="Razon Social"
+              name="razon"
               required
               class="form-control"
             />
@@ -75,27 +72,29 @@
           <div class="form-group">
             <input
               type="text"
-              placeholder="Apellido Completo"
-              name="apellido"
+              placeholder="Ruc"
+              name="ruc"
               required
               class="form-control"
             />
           </div>
           <div class="form-group">
             <input
-              type="number"
-              placeholder="Nro documento"
-              name="documento"
+              type="text"
+              placeholder="Telefono"
+              name="telefono"
               required
               class="form-control"
             />
           </div>
           <div class="form-group">
-            <select name="cliente" class="custom-select">
-              {% for data in dato %}
-              <option value="{{data.0}}">{{data.1}}</option>
-              {% endfor %}
-            </select>
+            <input
+              type="email"
+              placeholder="Email"
+              name="email"
+              required
+              class="form-control"
+            />
           </div>
           <div class="form-group">
             <div class="custom-file">
@@ -106,85 +105,34 @@
                 id="subir"
                 aria-describedby="inputGroupFileAddon01"
                 accept=".pdf"
-                required
               />
               <label class="custom-file-label" for="inputGroupFile01"
-                >Archivo PDF</label
+                >Selecciona un Archivo PDF</label
               >
             </div>
           </div>
-          <!-- <input type="file" name="subir" id="subir" accept=".jpg .png"> -->
 
-          <div class="form-group">
-            <input
-              type="text"
-              placeholder="Telefono"
-              name="telefono"
-              required
-              class="form-control"
-            />
-          </div>
-          <!-- conboboxs -->
-          <div class="form-group">
-            <select name="pais" class="custom-select">
-              {% for nacionalidad in nacionalidades %}
-              <option value="{{nacionalidad.0}}">{{nacionalidad.1}}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="form-group">
-            <select name="puesto" class="custom-select">
-              {% for puesto in puestos %}
-              <option value="{{puesto.0}}">{{puesto.1}}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="form-group">
-            <select name="tip_em" class="custom-select">
-              {% for tipo in tipos %}
-              <option value="{{tipo.0}}">{{tipo.1}}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="ingreso"> Fecha de Ingreso:</label>
-            <input
-              type="date"
-              id="ingreso"
-              placeholder="Fecha de ingreso"
-              name="ingreso"
-              required
-              class="form-control"
-            />
-          </div>
           <!-- aca termina -->
           <div class="form-group">
             <button type="submit" class="btn btn-primary btn-lg btn-block">
-              Agregar Empleado
+              Agregar Cliente
             </button>
           </div>
         </form>
       </div>
     </div>
-    <!-- Fin parte para agregar empleados -->
-
     <div class="col-md-7">
       <!-- Esta es la tabla donde se veran los datos -->
       <table class="table table-striped table-bordered bg-white table-sm">
         <!-- Para los encabezados -->
         <thead>
-          <tr style="text-align: center">
-            <td>Id Empleado</td>
-            <td>Nombre</td>
-            <td>Apellido</td>
-            <td>Documento</td>
+          <tr>
+            <td>Razon Social</td>
+            <td>Ruc</td>
+            <td>Email</td>
             <td>Contrato</td>
-            <td>Nacionalidad</td>
-            <td>Categoria</td>
             <td>Telefono</td>
-            <td>Empresa</td>
-            <td>T.Empleado</td>
-            <td>F.ingreso</td>
+            <td>Ver</td>
             <td>Operaciones</td>
           </tr>
         </thead>
@@ -192,15 +140,10 @@
         <tbody>
           {% for info in infos %}
           <tr>
-            <td>{{info.0}}</td>
             <td>{{info.1}}</td>
             <td>{{info.2}}</td>
             <td>{{info.3}}</td>
             <td>
-              <!-- <div class="image-container">
-                            <img class="small-image" src="{{ url_for('static', filename='imagenes/pdf-icon-producto.png') }}" alt="PDF Icon" width="50px" height="50px" data-toggle="modal" data-target="#modal{{ info.0 }}">
-                        </div> -->
-
               <!-- <h5 class="card-title">{{ info.4 }}</h5> -->
               <a
                 href="#"
@@ -239,7 +182,7 @@
                     <div class="modal-body">
                       <!--                    Modifica el enlace del PDF para abrirlo en una nueva pestaña -->
                       <a
-                        href="{{ url_for('static', filename='empleados/'  + info.4) }}"
+                        href="{{ url_for('static', filename='clientes/' + info.4) }}"
                         class="btn btn-primary"
                         target="_blank"
                         >Ver Archivo</a
@@ -260,18 +203,16 @@
               </div>
             </td>
             <td>{{info.5}}</td>
-            <td>{{info.6}}</td>
-            <td>{{info.8}}</td>
-            <td>{{info.9}}</td>
-            <td>{{info.10}}</td>
-            <td>{{info.11}}</td>
+            <td>
+              <a href="/verEmpleados/{{info.0}}" class="btn btn-success"
+                >Empleados</a
+              >
+            </td>
             <td>
               <!-- lo mismo en el edit -->
-              <a href="/edit/{{info.0}}" class="btn btn-secondary">Editar</a>
+              <a href="/editC/{{info.0}}" class="btn btn-secondary">Editar</a>
               <!-- paso el id para saber que registro voy a borrar -->
-              <a
-                href="/delet/{{info.0}}/{{info.4}}"
-                class="btn btn-danger btn-delete"
+              <a href="/deletC/{{info.0}}/{{info.4}}" class="btn btn-danger"
                 >Borrar</a
               >
             </td>

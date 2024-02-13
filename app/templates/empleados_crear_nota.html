@@ -1,7 +1,7 @@
-{% extends './layout_gclientes.html' %} {% block body %}
+{% extends './layout_empleado.html' %} {% block body %}
 
-<form action="{{ url_for('empleados_crear_nota') }}" method="POST">
-  <div class="form-group">
+<form class="mx-5" action="{{ url_for('empleados_crear_nota') }}" method="POST">
+  <div class="form-group px-3">
     <label for="fechaInicio">Fecha de Inicio:</label>
     <input
       type="date"
@@ -11,7 +11,7 @@
       required
     />
   </div>
-  <div class="form-group">
+  <div class="form-group px-3">
     <label for="fechaFin">Fecha de Fin:</label>
     <input
       type="date"
@@ -21,7 +21,7 @@
       required
     />
   </div>
-  <button type="submit" class="btn btn-primary">Submit</button>
+  <button type="submit" class="btn btn-primary px-3">Enviar</button>
 </form>
 
 {% endblock %}

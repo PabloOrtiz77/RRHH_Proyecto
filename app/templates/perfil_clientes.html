@@ -1,16 +1,15 @@
-{% extends './layout_gclientes.html' %} {% block body %}
+{% extends './layout_cliente.html' %} {% block body %}
 
 <div class="container">
-  <div class="row">
-    <div class="col-md-6 offset-md-3">
-      <h1>Profile</h1>
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Razón Social: {{ cliente[1] }}</h5>
-          <p class="card-text">RUC: {{ cliente[2] }}</p>
-          <p class="card-text">Email: {{ cliente[3] }}</p>
-          <p class="card-text">Teléfono: {{ cliente[5] }}</p>
-        </div>
+  <div class="col-md-6 offset-md-3">
+    <h1>Perfil</h1>
+    <a class="btn btn-primary" href="/clientes/inicio"> Atras</a>
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Razón Social: {{ cliente[1] }}</h5>
+        <p class="card-text">RUC: {{ cliente[2] }}</p>
+        <p class="card-text">Email: {{ cliente[3] }}</p>
+        <p class="card-text">Teléfono: {{ cliente[5] }}</p>
       </div>
     </div>
   </div>

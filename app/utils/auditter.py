@@ -4,7 +4,7 @@ def error_log(error, user):
     cursor = g.conexion.cursor()
     cursor.execute(f"""
     INSERT INTO `auditoria`(`id_usuario`, `descripcion`, `fecha`) 
-    VALUES ({user},'{error}',NOW());
+    VALUES ({user},'error: {error}',NOW());
     """)
     g.conexion.commit()
     cursor.close()
